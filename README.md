@@ -2,6 +2,9 @@
 
 Projeto de Robótica 2021.2
 
+*Para ter acesso completo as funcionalidades deste repositório, caso não possua algumas das bibliotecas, realizar:*
+> pip install -r requirements.txt
+
 *Integrantes*:
 
 - Letícia Côelho
