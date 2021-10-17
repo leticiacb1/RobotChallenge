@@ -12,7 +12,7 @@ Projeto de Robótica 2021.2
 - Matheus Oliveira
 - Ykaro Andrade
 
-> Status do Projeto: Em desenvolvimento :warning: Buscando COnceito C
+> Status do Projeto: Em desenvolvimento :warning: Buscando ´Conceito C´
 
 # Objetivos 
 
