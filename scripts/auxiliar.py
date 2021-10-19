@@ -298,6 +298,10 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
         cor_menor = np.array([220/2, 50, 100])
         cor_maior = np.array([260/2, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+    elif cor == "amarelo":
+        cor_menor = (int(45/2), 50, 50)
+        cor_maior = (int(66/2), 255, 255)
+        segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
     #podemos adiconar mais a medida que for surgindo necessidade
         
 

@@ -19,6 +19,7 @@ from geometry_msgs.msg import Twist, Vector3, Pose, Vector3Stamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header
 
+from auxiliar import *
 
 # Classes de sensores que serão chamadas pelo robô e pela máquina de estações.
 
@@ -67,7 +68,6 @@ class Laser:
         return self.subscriber
 
 
-
 # Classe do sensor Odometria, com algumas de suas funções principais:
 class Odom:
 
@@ -105,23 +105,27 @@ class Camera:
         
         self.corLow = cor1         # Parâmetros para o filtro
         self.corHight = cor2
-
+        self.cor = ""
         self.bridge = CvBridge()   # Para compressed image
-
+        self.cv_image = None
         self.centro = []           # Informações filtro de cor.
         self.mediaCor = []
         self.areaCor = 0.0
 
+        self.cx = -1
+        self.cy = -1
+        self.h = -1
+        self.w = -1
+
     # Inicilamente implementada apenas para filtro de cor:
     def roda_todo_frame(self):                                          # NÃO SEI SE É VIÁVEL IMPLEMENTAR
-        print("Frame filtro")
-        
         try:
-            cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
-            cv2.imshow("Camera", cv_image)                               #Acho que já é chamado em corModule
+            self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
+            self.cor = "amarelo"
             
-            self.mediaCor, self.centro, self.areaCor = cormodule.identifica_cor(cv_image, self.corLow, self.corHight)  # VER COMO O LORRAN CHAMOU EM AUXILIAR
+            self.mediaCor, self.centro, self.areaCor = identifica_cor(self.cv_image,self.cor)
 
+            cv2.imshow("Camera", cv_image)
             cv2.waitKey(1)
         
         except CvBridgeError as e:
