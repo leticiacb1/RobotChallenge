@@ -17,25 +17,6 @@ import smach_ros
 from sklearn import linear_model
 from sklearn.linear_model import LinearRegression
 
-
-def segmenta_linha_amarela(bgr):
-    """
-        deve receber uma imagem bgr e retornar uma máscara com os segmentos amarelos do centro da pista em branco.
-        Utiliza a função cv2.morphologyEx() para limpar ruidos na imagem
-    """
-    img2 = bgr.copy()
-    img_hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
-    # Segmenta apenas a cor amarela
-    menor = (int(45/2), 50, 50)
-    maior = (int(66/2), 255, 255)
-    mask_amarelo = cv2.inRange(img_hsv, menor, maior)
-    elemento_estrut = np.ones([3,3])
-    # realiza a abertura
-    mask_amarelo_abertura = cv2.morphologyEx(mask_amarelo, cv2.MORPH_OPEN, elemento_estrut)
-    
-    
-    return mask_amarelo_abertura
-
 def encontrar_contornos(mask):
     """
         deve receber uma imagem preta e branca e retornar todos os contornos encontrados
@@ -79,17 +60,6 @@ def encontrar_centro_dos_contornos(bgr, contornos):
         crosshair(img, (Xcentro, Ycentro), 5, (0,0,255))
     return img, x_list, y_list
 
-
-def desenhar_linha_entre_pontos(bgr, X, Y, color):
-    """
-        deve receber uma lista de coordenadas XY, e retornar uma imagem com uma linha entre os centros EM SEQUENCIA do mais proximo.
-    """
-    img = bgr.copy()
-    for i in range(1,len(X)):
-        x1, x2, y1, y2 = X[i-1], X[i], Y[i-1], Y[i]
-        cv2.line(img, (x1,y1), (x2,y2), color, 2)
-
-    return img
 
 def regressao_por_centro(bgr, x_array, y_array):
     """
@@ -139,68 +109,6 @@ def calcular_angulo_com_vertical(img, lm):
     img = cv2.putText(img, text, org, font, 
                        fontScale, color, thickness, cv2.LINE_AA)
     return angulo
-
-def segmenta_linha_branca(bgr):
-    """
-        deve receber uma imagem e segmentar as faixas brancas
-    """
-     # Faz a conversão para o espaço HSV
-    img_hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-    # Segmenta apenas a cor branca (qualquer valor de H, saturação baixa e altos intensidades luminosas)
-    menor = (int(0), 0, 240)
-    maior = (int(180), 50, 255)
-    bgr = cv2.inRange(img_hsv, menor, maior)
-    elemento_estrut = np.ones([3,3])
-    bgr = cv2.morphologyEx(bgr, cv2.MORPH_CLOSE, elemento_estrut)
-
-    
-    return bgr
-
-def estimar_linha_nas_faixas(img, mask):
-    """
-        deve receber uma imagem preta e branca e retorna dois pontos que formen APENAS uma linha em cada faixa. Desenhe cada uma dessas linhas na iamgem.
-         formato: [[(x1,y1),(x2,y2)], [(x1,y1),(x2,y2)]]
-    """
-    lines = cv2.HoughLinesP(mask, 25, math.pi/180.0, threshold=500, minLineLength=100, maxLineGap=30)
-    linhas1 = []
-    linhas2 = []
-
-    for i in range(2):
-        # Faz uma linha ligando o ponto inicial ao ponto final, com a cor verde (BGR)
-        cv2.line(img, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (0, 255, 0), 5, cv2.LINE_AA)
-        linhas1.append((lines[i][0][0], lines[i][0][1]))
-        linhas2.append((lines[i][0][2], lines[i][0][3]))
-    linhas = [(linhas1[0],linhas2[0]),(linhas1[1],linhas2[1])]
-    return linhas
-
-def calcular_equacao_das_retas(linhas):
-    """
-        deve receber dois pontos que estejam em cada uma das faixas e retornar a equacao das duas retas. Onde y = h + m * x. Formato: [(m1,h1), (m2,h2)]
-    """
-    x1_esquerda,y1_esquerda = linhas[0][0]
-    x2_esquerda, y2_esquerda = linhas[0][1]
-    m1 = (y2_esquerda-y1_esquerda)/(x2_esquerda-x1_esquerda)
-    h1 = y1_esquerda - m1*x1_esquerda
-    
-    x1_direita,y1_direita = linhas[1][0]
-    x2_direita, y2_direita = linhas[1][1]
-    m2 = (y2_direita-y1_direita)/(x2_direita-x1_direita)
-    h2 = y1_direita - m2*x1_direita
-    return [(m1,h1), (m2,h2)]
-
-def calcular_ponto_de_fuga(img, equacoes):
-    """
-        deve receber duas equacoes de retas e retornar o ponto de encontro entre elas. Desenhe esse ponto na imagem.
-    """
-    try:
-        m1,h1 = equacoes[0]
-        m2,h2  = equacoes[1]
-        x = (h2-h1)/(m1-m2)
-        y = m1*x + h1
-        cv2.circle(img, (int(x), int(y)), radius=5, color=(0,255,0), thickness=-1) 
-    except:
-        x, y = 0,0
-    return img, (x, y)
 
 def load_mobilenet():
     """
@@ -273,16 +181,11 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
     '''
     Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
     '''
-
-    # No OpenCV, o canal H vai de 0 até 179, logo cores similares ao 
-    # vermelho puro (H=0) estão entre H=-8 e H=8. 
-    # Precisamos dividir o inRange em duas partes para fazer a detecção 
-    # do vermelho:
     # frame = cv2.flip(frame, -1) # flip 0: eixo x, 1: eixo y, -1: 2 eixos
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
     #selecionar a cor a ser segmentada
-    if cor == "red":
+    if cor == "vermelho":
         cor_menor = np.array([0, 50, 100])
         cor_maior = np.array([6, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
@@ -290,11 +193,8 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
         cor_menor = np.array([174, 50, 100])
         cor_maior = np.array([180, 255, 255])
 
-        # NOTA: so' precisamos de 2 ranges porque o vermelho da' 
-        # a volta do 360 para o zero.
-        # Para qualquer outra cor apenas um inRange resolve
         segmentado_cor += cv2.inRange(frame_hsv, cor_menor, cor_maior)
-    elif cor == "blue":
+    elif cor == "azul":
         cor_menor = np.array([220/2, 50, 100])
         cor_maior = np.array([260/2, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
@@ -302,12 +202,7 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
         cor_menor = (int(45/2), 50, 50)
         cor_maior = (int(66/2), 255, 255)
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-    #podemos adiconar mais a medida que for surgindo necessidade
-        
 
-    # Note que a notacão do numpy encara as imagens como matriz, portanto o enderecamento é
-    # linha, coluna ou (y,x)
-    # Por isso na hora de montar a tupla com o centro precisamos inverter, porque 
     centro = (frame.shape[1]//2, frame.shape[0]//2)
 
 
@@ -315,15 +210,7 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
         cv2.line(img_rgb, (int( point[0] - length/2 ), point[1] ),  (int( point[0] + length/2 ), point[1]), color ,width, length)
         cv2.line(img_rgb, (point[0], int(point[1] - length/2) ), (point[0], int( point[1] + length/2 ) ),color ,width, length) 
 
-
-
-    # A operação MORPH_CLOSE fecha todos os buracos na máscara menores 
-    # que um quadrado 7x7. É muito útil para juntar vários 
-    # pequenos contornos muito próximos em um só.
-    segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))
-
-    # Encontramos os contornos na máscara e selecionamos o de maior área
-    #contornos, arvore = cv2.findContours(segmentado_cor.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)	
+    segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
     contornos, arvore = cv2.findContours(segmentado_cor.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) 
 
     maior_contorno = None
@@ -346,16 +233,7 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
     else:
         media = (0, 0)
 
-    # Representa a area e o centro do maior contorno no frame
-    font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-    cv2.putText(frame,"{:d} {:d}".format(*media),(20,100), 1, 4,(255,255,255),2,cv2.LINE_AA)
-    cv2.putText(frame,"{:0.1f}".format(maior_contorno_area),(20,50), 1, 4,(255,255,255),2,cv2.LINE_AA)
-
-   # cv2.imshow('video', frame)
-    cv2.imshow('seg', segmentado_cor)
-    cv2.waitKey(1)
-
-    return media, centro, maior_contorno_area
+    return media, centro, maior_contorno_area, segmentado_cor
 
 
 if __name__ == "__main__":

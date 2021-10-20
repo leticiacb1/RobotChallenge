@@ -6,6 +6,7 @@ import rospy
 import numpy as np
 from math import atan2, degrees
 from geometry_msgs.msg import Twist, Point
+from Sensores import  *
 
 class Actions:
     ''' Aqui iremos coordenar de maneira ordenada as possíveis ações a serem executadas pelo robô sem ordem lógica'''
@@ -14,26 +15,50 @@ class Actions:
     def __init__(self, camera, laserScan, odometria):
         '''Constroi o objeto, além de coordenar de acordo com os sensores e tarefas a serem executadas,
         o funcionamento adequado das ações de movimentação'''
-        
+
         self.camera = camera
         self.laserScan  = laserScan
         self.odometria  =  odometria
-        self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=3)
-        self.vel = Twist(Vector3(0,0,0), Vector3(0,0,0))
+        self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+        self.vel = Twist()
+        self.v = 0
+        self.o = 0
+
+        self.cx = -1
+        self.cy = -1
+        self.h = -1
+        self.w = -1
+
+        self.hertz = 250
+        self.rate = rospy.Rate(self.hertz)
     
-    def controla_velocidade(self,v,w):
+    def controla_velocidade(self):
         '''Realiza controle da velocidade do Robô'''
-        self.v = v
-        self.w = w
-        self.vel = Twist(Vector3(v,0,0), Vector3(0,0,w))
+
+        self.vel.linear.x = self.v
+        self.vel.angular.z = self.o
         self.pub.publish(self.vel)
+        rospy.loginfo("linear: %f angular: %f", self.vel.linear.x, self.vel.angular.z)
+        self.rate.sleep()
 
     
     def seguimento_linha(self):
         """Ordena o seguimento da linha"""
         # Receberá funções sensoriais da camera (regressão e centro de massa) e decidirá por onde o robô deve prosseguir
-        pass
+        try:
+            self.camera.set_cor("amarelo")
+            self.cx,self.cy,self.h,self.w = self.camera.get_valores()
+            err = self.cx - self.w/2
+            self.v = 0.2
+            self.o = -float(err) / 100
 
+        except rospy.ROSInterruptException:
+	        print("Ocorreu uma exceção com o rospy")
+
+        finally:
+            self.controla_velocidade()
+
+        
     def controla_garra(self):
         """Receberá a garra e irá coordenar suas ações"""
         pass  
@@ -49,7 +74,14 @@ class Actions:
     def decisao_aruco(self):
         pass
 
+if __name__=="__main__":
+    rospy.init_node('actions')
+    camera  = Camera()
+    robo = Actions(camera, 1, 2)
 
+    while not rospy.is_shutdown():
+      robo.seguimento_linha()
+    
     
 
 

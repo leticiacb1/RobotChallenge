@@ -98,34 +98,55 @@ class Odom:
 #  Classe do sensor Câmera, com algumas de suas funções principais:
 class Camera:
 
-    def __init__(self,cor1 = None, cor2 = None):
+    def __init__(self):
 
         self.topico_imagem = "/camera/image/compressed"
         self.subscriber = rospy.Subscriber(self.topico_imagem , CompressedImage, self.roda_todo_frame, queue_size=4, buff_size = 2**24)
-        
-        self.corLow = cor1         # Parâmetros para o filtro
-        self.corHight = cor2
         self.cor = ""
+        self.mask = None
         self.bridge = CvBridge()   # Para compressed image
         self.cv_image = None
         self.centro = []           # Informações filtro de cor.
         self.mediaCor = []
         self.areaCor = 0.0
-
+        self.M = None
         self.cx = -1
         self.cy = -1
         self.h = -1
         self.w = -1
 
+    def centro_de_massa(self):
+        "Define centro de massa da figura"
+        self.M = cv2.moments(self.mask)
+        if self.M['m00'] > 0:
+            self.cx = int(self.M['m10']/self.M['m00'])
+            self.cy = int(self.M['m01']/self.M['m00'])
+            cv2.circle(self.cv_image, (self.cx, self.cy), 20, (0,255,255), -1)
+
+    def faixa_imagem(self):
+        "Recorta a faixa a altura de visão do robô"
+        self.h, self.w = self.cv_image.shape[:2]
+        search_top = 3*self.h//4 - 50
+        search_bot = 3*self.h//4 + 20
+        self.mask[0:search_top, 0:self.w] = 0
+        self.mask[search_bot:self.h, 0:self.w] = 0
+
+    def get_valores(self):
+        "Getter de valores para aproveitamento em ações executadas"
+        return self.cx, self.cy, self.h, self.w
+
+    def set_cor(self,cor):
+        self.cor = cor
+
     # Inicilamente implementada apenas para filtro de cor:
-    def roda_todo_frame(self):                                          # NÃO SEI SE É VIÁVEL IMPLEMENTAR
+    def roda_todo_frame(self, imagem):                                          # NÃO SEI SE É VIÁVEL IMPLEMENTAR
         try:
             self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
-            self.cor = "amarelo"
-            
-            self.mediaCor, self.centro, self.areaCor = identifica_cor(self.cv_image,self.cor)
-
-            cv2.imshow("Camera", cv_image)
+            self.mediaCor, self.centro, self.areaCor, self.mask = identifica_cor(self.cv_image,self.cor)
+            self.centro_de_massa()
+            self.faixa_imagem()
+            cv2.imshow("Camera", self.cv_image)
+            cv2.imshow("Mascara", self.mask)
             cv2.waitKey(1)
         
         except CvBridgeError as e:
