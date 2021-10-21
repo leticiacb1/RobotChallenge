@@ -224,12 +224,12 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
 
     # Encontramos o centro do contorno fazendo a média de todos seus pontos.
     if not maior_contorno is None :
-        cv2.drawContours(frame, [maior_contorno], -1, [0, 0, 255], 5)
+        #cv2.drawContours(frame, [maior_contorno], -1, [0, 0, 255], 5)
         maior_contorno = np.reshape(maior_contorno, (maior_contorno.shape[0], 2))
         media = maior_contorno.mean(axis=0)
         media = media.astype(np.int32)
-        cv2.circle(frame, (media[0], media[1]), 5, [0, 255, 0])
-        cross(frame, centro, [255,0,0], 1, 17)
+        #cv2.circle(frame, (media[0], media[1]), 5, [0, 255, 0])
+        #cross(frame, centro, [255,0,0], 1, 17)
     else:
         media = (0, 0)
 
