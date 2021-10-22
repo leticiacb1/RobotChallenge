@@ -12,12 +12,14 @@ Projeto de Robótica 2021.2
 - Matheus Oliveira
 - Ykaro Andrade
 
-> Status do Projeto: Em desenvolvimento :warning: Buscando ´Conceito C´
+> Status do Projeto: Em desenvolvimento :warning: 
+
+* ´Conceito I´ : Atingido :heavy_check_mark:
+* ´Conceito C´ : Buscando :warning:
 
 # Objetivos 
 
 Cores válidas do creeper: blue, green, pink Estações válidas: dog, horse, cow e car
-
 
 
 ### Exemplos de objetivos: 

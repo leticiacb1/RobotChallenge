@@ -15,7 +15,6 @@ class Actions:
     def __init__(self, camera, laserScan, odometria):
         '''Constroi o objeto, além de coordenar de acordo com os sensores e tarefas a serem executadas,
         o funcionamento adequado das ações de movimentação'''
-
         self.camera = camera
         self.laserScan  = laserScan
         self.odometria  =  odometria
@@ -31,16 +30,18 @@ class Actions:
 
         self.hertz = 250
         self.rate = rospy.Rate(self.hertz)
-    
+
+        self.x = 0
+        self.y = 0 
+        self.volta = 0
+
     def controla_velocidade(self):
         '''Realiza controle da velocidade do Robô'''
-
         self.vel.linear.x = self.v
         self.vel.angular.z = self.o
         self.pub.publish(self.vel)
-        rospy.loginfo("linear: %f angular: %f", self.vel.linear.x, self.vel.angular.z)
+        #rospy.loginfo("linear: %f angular: %f", self.vel.linear.x, self.vel.angular.z)
         self.rate.sleep()
-
     
     def seguimento_linha(self):
         """Ordena o seguimento da linha"""
@@ -48,17 +49,27 @@ class Actions:
         try:
             self.camera.set_cor("amarelo")
             self.cx,self.cy,self.h,self.w = self.camera.get_valores()
-            err = self.cx - self.w/2
-            self.v = 0.2
-            self.o = -float(err) / 100
-
+            inicio_x = (abs(self.odometria.positions()[0])>0 and abs(self.odometria.positions()[0])<0.3)
+            inicio_y = (abs(self.odometria.positions()[1])>0 and abs(self.odometria.positions()[1])<0.3)
+            estado_de_parada = self.camera.get_estado()
+            if  inicio_x and  inicio_y and estado_de_parada==2:
+                self.v = 0
+                self.o = 0
+                print("Volta Completada!")
+            else:
+                            
+                err = self.cx - self.w/2
+                self.v = 0.4
+                self.o = -float(err) / 100
+                if self.odometria.distancia_centro()>2 and self.volta == 0:
+                    self.camera.set_estado(1)
+                    self.volta+=1
         except rospy.ROSInterruptException:
 	        print("Ocorreu uma exceção com o rospy")
 
         finally:
             self.controla_velocidade()
 
-        
     def controla_garra(self):
         """Receberá a garra e irá coordenar suas ações"""
         pass  
@@ -75,12 +86,9 @@ class Actions:
         pass
 
 if __name__=="__main__":
-    rospy.init_node('actions')
-    camera  = Camera()
-    robo = Actions(camera, 1, 2)
+    print('Este script não deve ser usado diretamente')
+      
 
-    while not rospy.is_shutdown():
-      robo.seguimento_linha()
     
     
 
