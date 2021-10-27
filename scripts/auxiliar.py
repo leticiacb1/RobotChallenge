@@ -177,7 +177,7 @@ def detect(net, frame, CONFIDENCE, COLORS, CLASSES):
 
     return image, results
 
-def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.: "red")
+def identifica_cor(frame, cor, segue_linha = False):    #Recebe o frame e uma string com a cor(ex.: "red") e se a mascará é para a linha ou para creeper
     '''
     Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
     '''
@@ -185,7 +185,7 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
     #selecionar a cor a ser segmentada
-    if cor == "vermelho":
+    if cor == "orange":                     # Mascara creeper vermelho
         cor_menor = np.array([0, 50, 100])
         cor_maior = np.array([6, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
@@ -194,11 +194,18 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
         cor_maior = np.array([180, 255, 255])
 
         segmentado_cor += cv2.inRange(frame_hsv, cor_menor, cor_maior)
-    elif cor == "azul":
+    
+    elif cor == "blue":                      # Marcara creeper azul
         cor_menor = np.array([220/2, 50, 100])
         cor_maior = np.array([260/2, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-    elif cor == "amarelo":
+    
+    elif cor == "green":                     # Mascara creeper verde 
+        cor_menor = np.array([100/2, 50, 100])
+        cor_maior = np.array([140/2, 255, 255])
+        segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+    
+    elif cor == "amarelo":                    # Mascara linha
         cor_menor = (int(45/2), 50, 50)
         cor_maior = (int(66/2), 255, 255)
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
@@ -224,16 +231,24 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
 
     # Encontramos o centro do contorno fazendo a média de todos seus pontos.
     if not maior_contorno is None :
-        #cv2.drawContours(frame, [maior_contorno], -1, [0, 0, 255], 5)
+        
+        if not segue_linha:
+        
+            cv2.drawContours(frame, [maior_contorno], -1, [0, 0, 255], 5)
+        
         maior_contorno = np.reshape(maior_contorno, (maior_contorno.shape[0], 2))
         media = maior_contorno.mean(axis=0)
         media = media.astype(np.int32)
         #cv2.circle(frame, (media[0], media[1]), 5, [0, 255, 0])
-        #cross(frame, centro, [255,0,0], 1, 17)
+        cross(frame, centro, [255,0,0], 1, 17)
+
     else:
         media = (0, 0)
 
-    return media, centro, maior_contorno_area, segmentado_cor
+    if segue_linha:
+        return segmentado_cor                         #Mascara da linhas
+    else:
+        return media, centro, maior_contorno_area     #Utilizado apenas para centralizar em creeper
 
 
 if __name__ == "__main__":

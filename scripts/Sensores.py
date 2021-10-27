@@ -113,17 +113,18 @@ class Camera:
         self.subscriber = rospy.Subscriber(self.topico_imagem , CompressedImage, self.roda_todo_frame, queue_size=4, buff_size = 2**24)
         self.bridge = CvBridge()   # Para compressed image
         self.cv_image = None
+        
         #Para seguir linha
         self.cor = ""
         self.mask = None
-        self.centro = []           # Informações filtro de cor.
-        self.mediaCor = []
-        self.areaCor = 0.0
+
         self.M = None
+
         self.cx = -1
         self.cy = -1
         self.h = -1
         self.w = -1
+
         #Para identificar aruco
         self.vision =  None
         self.gray = None
@@ -131,20 +132,41 @@ class Camera:
         self.camera_matrix   = np.loadtxt(self.calib_path+'cameraMatrix_raspi.txt', delimiter=',')
         self.camera_distortion   = np.loadtxt(self.calib_path+'cameraDistortion_raspi.txt', delimiter=',')
         self.aruco_dict  = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
-        self.marker_size  = 20
+        self.marker_size  = 3
         self.ids  = None
         self.corners = None
         self.dist_aruco = 0
         self.ret = None
         self.rvec = None
         self.tvec = None
-        self.estado = 0
+        self.estado_na_pista = 0           # Indica em qual estado da pista o robô está. Já virou a direita? Já completou a volta? (O valor dessa variável é atualizada pelo módulo actions)
+
+        # Centraliza creeper:
+        self.centro = []                    # Informações filtro de cor.
+        self.mediaCor = []
+        self.areaCor = 0.0
+
+        self.cor_creeper = None    
+        self.id_creeper = None
 
     #getters
+    def get_corners(self):
+        '''Retorna o primeiro valor de x do id identificado'''
+        m  = 0
+        if self.get_idCreeper() in self.get_ids(): 
+            try:
+                for i in self.corners[0]:
+                    m += i[0][0]
+                return m
+            except:
+                pass
+        else:
+            return 0
+
     def get_ids(self):
-        "Retorno das ids aruco identificadas"
+        "Retorno do primeiro id identificado"
         try:
-            return self.ids[0][0]
+            return self.ids[0]
         except:
             return None
 
@@ -152,22 +174,35 @@ class Camera:
         "Retorno da distancia da aruco ao robo"
         return self.dist_aruco
 
-    def get_estado(self):
+    def get_estado_na_pista(self):
         "Retorno do estado de pista"
-        return self.estado
+        return self.estado_na_pista
 
     def get_valores(self):
         "Getter de valores para aproveitamento em ações executadas"
         return self.cx, self.cy, self.h, self.w
 
+    def get_idCreeper(self):
+        return self.id_creeper
+    
+    def get_creeperValues(self):
+        '''Valores utilizados na centralização do creeper'''
+        return (self.centro, self.mediaCor, self.areaCor)
+
     #setters
-    def set_estado(self,estado):
+    def set_estado_na_pista(self,estado):
         "Permite modificação do estado"
-        self.estado = estado
+        self.estado_na_pista = estado
 
     def set_cor(self,cor):
         "Permite da modificação da cor de segmentação"
         self.cor = cor
+
+    def set_cor_crepper(self,cor):
+        self.cor_creeper = cor
+
+    def set_id_creeper(self,id):
+        self.id_creeper = id
 
     #funções identitárias
     def aruco_detection(self):
@@ -187,25 +222,36 @@ class Camera:
             self.dist_aruco = np.sqrt(self.tvec[0]**2 + self.tvec[1]**2 + self.tvec[2]**2)
         except:
             pass
+    
+    def curva(self):
+        '''Retorna True caso identificado id de curva'''
+        return (self.get_ids()[0]==200)
+    
+    def creeper_correto():
+        '''Retorna true caso o id do creeper recebido pela camera seja o id buscado'''
+        return (self.get_ids()[0]== self.get_idCreeper())
 
     def faixa_imagem(self):
         "Recorta a faixa a altura de visão do robô para seguir linha, além de cortes para percorre-la"
         self.h, self.w = self.cv_image.shape[:2]
+        
         search_top = 3*self.h//4 - 50
         search_bot = 3*self.h//4 + 20
-        self.mask[0:search_top, 0:self.w] = 0
+
+        self.mask[0:search_top, 0:self.w] = 0           # Recorte na mascara utilizada para seguir linha
         self.mask[search_bot:self.h, 0:self.w] = 0
+        
         esquerda = self.mask.copy()
         direita = self.mask.copy()
-        if self.aruco_distance()<240 and self.get_ids()==200 and self.estado == 0:
+        
+        if self.aruco_distance()<35 and curva and self.estado_na_pista == 0:
             print("Virando a esquerda!")
             esquerda[:,400:]=0
             self.vision = esquerda
-        elif self.aruco_distance()<240 and self.get_ids()==200 and self.estado == 1:
+        elif self.aruco_distance()<35 and curva and self.estado_na_pista == 1:
             print("Virando a Direita!")
             direita[:,:250]=0
             self.vision = direita
-            self.estado =2
         else:
             print("Seguindo Linha!")    
             self.vision =  self.mask
@@ -213,13 +259,13 @@ class Camera:
        
     def centro_de_massa(self):
         "Define centro de massa da figura"
-        self.aruco_markers()
+        self.aruco_markers()                         
         self.faixa_imagem()
-        self.M = cv2.moments(self.vision)
+        self.M = cv2.moments(self.vision)     # Mascara atuante no "momento"
         if self.M['m00'] > 0:
             self.cx = int(self.M['m10']/self.M['m00'])
             self.cy = int(self.M['m01']/self.M['m00'])
-            cv2.circle(self.cv_image, (self.cx, self.cy), 20, (0,255,255), -1)
+            cv2.circle(self.cv_image, (self.cx, self.cy), 20, (255,0,0), -1)
 
     # Inicilamente implementada apenas para filtro de cor:
     def roda_todo_frame(self, imagem):        
@@ -227,10 +273,15 @@ class Camera:
         try:
             self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
             self.aruco_image = self.cv_image.copy()
-            self.mediaCor, self.centro, self.areaCor, self.mask = identifica_cor(self.cv_image,self.cor)
+            #creeper = self.cv_image.copy()
+            self.mask = identifica_cor(self.cv_image,self.cor, True)
+            self.mediaCor, self.centro, self.areaCor, self.mask = identifica_cor(self.cv_image,self.cor_creeper)
+            
             self.centro_de_massa()
+
             cv2.imshow("Camera", self.cv_image)
             cv2.imshow("Mascara", self.vision)
+            #cv2.imshow("Creeper", creeper)
             cv2.waitKey(1)
         
         except CvBridgeError as e:

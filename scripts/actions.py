@@ -16,9 +16,11 @@ class Actions:
         '''Constroi o objeto, além de coordenar de acordo com os sensores e tarefas a serem executadas,
         o funcionamento adequado das ações de movimentação'''
         self.camera = camera
-        self.laserScan  = laserScan
-        self.odometria  =  odometria
+        self.laserScan  = Laser(1)
+        self.odometria  =  Odom()
+        
         self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+        
         self.vel = Twist()
         self.v = 0
         self.o = 0
@@ -35,6 +37,22 @@ class Actions:
         self.y = 0 
         self.volta = 0
 
+        # Atualizando objetivos:
+        self.objetivo = 0              # Variável que guarda objetivos a serem seguidos. Atualizado pela classe Robô e em Actions.
+        
+        # Variáveis creeper:
+
+        self.find_creeper = self.camera.creeper_correto()
+        self.centroCamera, self.mediaCreeper, self.areaCreeper = self.camera.get_creeperValues()
+
+
+    def get_objetivo(self):
+        return self.objetivo
+
+    def set_objetivo(self, momento):
+        self.objetivo = momento
+
+
     def controla_velocidade(self):
         '''Realiza controle da velocidade do Robô'''
         self.vel.linear.x = self.v
@@ -43,19 +61,31 @@ class Actions:
         #rospy.loginfo("linear: %f angular: %f", self.vel.linear.x, self.vel.angular.z)
         self.rate.sleep()
     
+    def encontrou_creeper(self):   # TIRAR DÚVIDA 
+        '''Identifica creeper correto por id e cor'''
+        try:
+            if(self.find_creeper):
+                self.set_objetivo(1)  
+        except:
+            pass
+
     def seguimento_linha(self):
         """Ordena o seguimento da linha"""
         # Receberá funções sensoriais da camera (regressão e centro de massa) e decidirá por onde o robô deve prosseguir
         try:
-            self.camera.set_cor("amarelo")
+            self.camera.set_cor("amarelo")                             # Mascara para o amarelo da pista
             self.cx,self.cy,self.h,self.w = self.camera.get_valores()
+            
             inicio_x = (abs(self.odometria.positions()[0])>0 and abs(self.odometria.positions()[0])<0.3)
             inicio_y = (abs(self.odometria.positions()[1])>0 and abs(self.odometria.positions()[1])<0.3)
-            estado_de_parada = self.camera.get_estado()
-            if  inicio_x and  inicio_y and estado_de_parada==2:
+            
+            estado_de_parada = self.camera.get_estado_na_pista()
+            
+            if  inicio_x and  inicio_y and estado_de_parada==4:   #ALTERAR DEPOIS
                 self.v = 0
                 self.o = 0
                 print("Volta Completada!")
+
             else:
                             
                 err = self.cx - self.w/2
@@ -69,6 +99,14 @@ class Actions:
 
         finally:
             self.controla_velocidade()
+
+    def centralizar_creeper(self):
+        pass
+
+    
+    def segue_ate_creeper(seld):
+        pass
+
 
     def controla_garra(self):
         """Receberá a garra e irá coordenar suas ações"""
