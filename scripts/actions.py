@@ -12,11 +12,11 @@ class Actions:
     ''' Aqui iremos coordenar de maneira ordenada as possíveis ações a serem executadas pelo robô sem ordem lógica'''
 
     # Construtor
-    def __init__(self, camera, laserScan, odometria):
+    def __init__(self, camera):
         '''Constroi o objeto, além de coordenar de acordo com os sensores e tarefas a serem executadas,
         o funcionamento adequado das ações de movimentação'''
         self.camera = camera
-        self.laserScan  = Laser(1)
+        self.laserScan  = Laser(0.22)
         self.odometria  =  Odom()
         
         self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=1)
@@ -41,10 +41,8 @@ class Actions:
         self.objetivo = 0              # Variável que guarda objetivos a serem seguidos. Atualizado pela classe Robô e em Actions.
         
         # Variáveis creeper:
-
-        self.find_creeper = self.camera.creeper_correto()
-        self.centroCamera, self.mediaCreeper, self.areaCreeper = self.camera.get_creeperValues()
-
+        self.find_creeper = None
+        self.centro , self.Xcreeper, self.area =   self.camera.get_creeperValues()
 
     def get_objetivo(self):
         return self.objetivo
@@ -61,11 +59,12 @@ class Actions:
         #rospy.loginfo("linear: %f angular: %f", self.vel.linear.x, self.vel.angular.z)
         self.rate.sleep()
     
-    def encontrou_creeper(self):   # TIRAR DÚVIDA 
+    def encontrou_creeper(self):   
         '''Identifica creeper correto por id e cor'''
         try:
-            if(self.find_creeper):
+            if(self.camera.achei_creeper):
                 self.set_objetivo(1)  
+                print("MUDANDO OBJETIVO")
         except:
             pass
 
@@ -81,7 +80,7 @@ class Actions:
             
             estado_de_parada = self.camera.get_estado_na_pista()
             
-            if  inicio_x and  inicio_y and estado_de_parada==4:   #ALTERAR DEPOIS
+            if  inicio_x and  inicio_y and estado_de_parada == 4:   #ALTERAR DEPOIS
                 self.v = 0
                 self.o = 0
                 print("Volta Completada!")
@@ -91,9 +90,15 @@ class Actions:
                 err = self.cx - self.w/2
                 self.v = 0.4
                 self.o = -float(err) / 100
+
                 if self.odometria.distancia_centro()>2 and self.volta == 0:
-                    self.camera.set_estado(1)
+                    self.camera.set_estado_na_pista(1)                            # Curva a esquerda
                     self.volta+=1
+
+                elif self.odometria.distancia_centro()>2 and self.volta == 1 and self.odometria.positions()[0]>1:
+                    self.camera.set_estado_na_pista(2)                            # Curva a direita
+                    self.volta+=1
+
         except rospy.ROSInterruptException:
 	        print("Ocorreu uma exceção com o rospy")
 
@@ -101,12 +106,48 @@ class Actions:
             self.controla_velocidade()
 
     def centralizar_creeper(self):
-        pass
+        '''Centraliza e segue até o creeper (Casos esse possua o id e a cor correta), utilizando a função segue_ate_creeper para parar'''
 
+        if(self.get_objetivo() == 1):     # Já identificou o creeper correto
+                try:
+                    if(self.camera.XmedioId() is not None):
+                        aruco = (self.camera.XmedioId())                        # X_centro aruco
+                        
+                        if(self.find_creeper):
+                            if(self.centro > 1.02*aruco):
+                                self.o = 0.2
+                            elif(self.centro < 0.98*aruco):
+                                self.o = -0.2
+                            else:
+                                self.segue_ate_creeper()
+                except rospy.ROSInterruptException:
+                    print("Ocorreu uma exceção com o rospy")
+            
+        self.controla_velocidade()
     
-    def segue_ate_creeper(seld):
-        pass
+    def diff_centroCor_centroId(self):
+        '''Função que identifica se a cor e o id são do creeper buscado. Para isso é analisada a distancia do centro do id para o centro da cor do creeper'''
 
+        if(self.centro is not None):
+            if(abs(self.centro - self.camera.XmedioId())<10):
+                self.find_creeper = True
+        self.fins_creeper = False
+
+    def segue_ate_creeper(self):
+        '''Segue em frente até atingir a distância estipulada'''
+        emFrente = self.laserScan.keep_going()  # True caso possa continuar em frente
+
+        if(emFrente):
+            print("Em frente!")
+            self.v = 0.08
+        else:
+            print("PARE!")
+            self.v = 0
+            self.o = 0
+
+            #Atualiza objetivo  - Aṕos parar na distância pedida o robo deve agora pegar o creeper
+            self.set_objetivo(2)
+            print("Atualizando objetivo")
 
     def controla_garra(self):
         """Receberá a garra e irá coordenar suas ações"""

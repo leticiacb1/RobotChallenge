@@ -128,7 +128,7 @@ class Camera:
         #Para identificar aruco
         self.vision =  None
         self.gray = None
-        self.calib_path  = "aruco_assets/"
+        self.calib_path  = "../aruco_assets/"
         self.camera_matrix   = np.loadtxt(self.calib_path+'cameraMatrix_raspi.txt', delimiter=',')
         self.camera_distortion   = np.loadtxt(self.calib_path+'cameraDistortion_raspi.txt', delimiter=',')
         self.aruco_dict  = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
@@ -142,31 +142,21 @@ class Camera:
         self.estado_na_pista = 0           # Indica em qual estado da pista o robô está. Já virou a direita? Já completou a volta? (O valor dessa variável é atualizada pelo módulo actions)
 
         # Centraliza creeper:
-        self.centro = []                    # Informações filtro de cor.
+        self.centro = []                   # Informações filtro de cor.
         self.mediaCor = []
         self.areaCor = 0.0
 
         self.cor_creeper = None    
         self.id_creeper = None
 
-    #getters
-    def get_corners(self):
-        '''Retorna o primeiro valor de x do id identificado'''
-        m  = 0
-        if self.get_idCreeper() in self.get_ids(): 
-            try:
-                for i in self.corners[0]:
-                    m += i[0][0]
-                return m
-            except:
-                pass
-        else:
-            return 0
+        self.achei_creeper = False         # Verififca se creeper buscado está no campo de visão
+        self.curva = False                 # Identifica se uma curva foi realizada
 
+    #getters
     def get_ids(self):
-        "Retorno do primeiro id identificado"
+        "Retorno do primeiro id"
         try:
-            return self.ids[0]
+            return self.ids[0][0]
         except:
             return None
 
@@ -210,7 +200,8 @@ class Camera:
         self.gray = cv2.cvtColor(self.aruco_image, cv2.COLOR_BGR2GRAY)
         self.corners, self.ids, _ = aruco.detectMarkers(self.gray, self.aruco_dict)
 
-        
+        self.creeper_Idcorreto()  #Busca creeper do Id correto
+
     def aruco_markers(self):
         "Faz marca dos arucos"
         self.aruco_detection()
@@ -222,14 +213,35 @@ class Camera:
             self.dist_aruco = np.sqrt(self.tvec[0]**2 + self.tvec[1]**2 + self.tvec[2]**2)
         except:
             pass
+
+    def XmedioId(self):
+        '''Retorna o primeiro valor medio de x do aruco identificado'''
+        m  = 0
+        try:
+            if (self.id_creeper in self.ids): 
+                index = np.where(self.ids == self.id_creeper)[0][0]                    # Buscando o index em que se encontra o creeper buscado
+                try:
+                    for i in self.corners[index][0]:
+                        m += i[0]
+                    return m/4    
+                except:
+                    pass
+            else:
+                return 0
+        except:
+            pass
     
-    def curva(self):
-        '''Retorna True caso identificado id de curva'''
-        return (self.get_ids()[0]==200)
-    
-    def creeper_correto():
-        '''Retorna true caso o id do creeper recebido pela camera seja o id buscado'''
-        return (self.get_ids()[0]== self.get_idCreeper())
+    def creeper_Idcorreto(self):
+        '''Retorna true caso o robô tenha identificado o creeper do Id correto'''
+        try:
+            for id in self.ids:
+                if(id == self.get_idCreeper()):
+                    print("ACHEI o CREEPER!")
+                    self.achei_creeper = True
+        except:
+            pass
+
+        return self.achei_creeper
 
     def faixa_imagem(self):
         "Recorta a faixa a altura de visão do robô para seguir linha, além de cortes para percorre-la"
@@ -244,19 +256,19 @@ class Camera:
         esquerda = self.mask.copy()
         direita = self.mask.copy()
         
-        if self.aruco_distance()<35 and curva and self.estado_na_pista == 0:
+        if self.aruco_distance()<35 and  self.get_ids() ==200 and self.estado_na_pista == 0:
             print("Virando a esquerda!")
             esquerda[:,400:]=0
-            self.vision = esquerda
-        elif self.aruco_distance()<35 and curva and self.estado_na_pista == 1:
+            self.vision = esquerda                        
+
+        elif self.aruco_distance()<35 and self.get_ids() ==200 and self.estado_na_pista == 1:  
             print("Virando a Direita!")
             direita[:,:250]=0
             self.vision = direita
         else:
-            print("Seguindo Linha!")    
+            #print("Seguindo Linha!")    
             self.vision =  self.mask
-
-       
+        
     def centro_de_massa(self):
         "Define centro de massa da figura"
         self.aruco_markers()                         
@@ -274,8 +286,9 @@ class Camera:
             self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
             self.aruco_image = self.cv_image.copy()
             #creeper = self.cv_image.copy()
+            
             self.mask = identifica_cor(self.cv_image,self.cor, True)
-            self.mediaCor, self.centro, self.areaCor, self.mask = identifica_cor(self.cv_image,self.cor_creeper)
+            self.mediaCor, self.centro, self.areaCor = identifica_cor(self.cv_image,self.cor_creeper)
             
             self.centro_de_massa()
 

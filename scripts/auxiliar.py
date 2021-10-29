@@ -186,8 +186,8 @@ def identifica_cor(frame, cor, segue_linha = False):    #Recebe o frame e uma st
     
     #selecionar a cor a ser segmentada
     if cor == "orange":                     # Mascara creeper vermelho
-        cor_menor = np.array([0, 50, 100])
-        cor_maior = np.array([6, 255, 255])
+        cor_menor = np.array([0, 50, 50])
+        cor_maior = np.array([4, 150, 150])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
 
         cor_menor = np.array([174, 50, 100])
@@ -196,13 +196,13 @@ def identifica_cor(frame, cor, segue_linha = False):    #Recebe o frame e uma st
         segmentado_cor += cv2.inRange(frame_hsv, cor_menor, cor_maior)
     
     elif cor == "blue":                      # Marcara creeper azul
-        cor_menor = np.array([220/2, 50, 100])
-        cor_maior = np.array([260/2, 255, 255])
+        cor_menor = np.array([90, 50, 100])
+        cor_maior = np.array([100, 150, 150])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
     
     elif cor == "green":                     # Mascara creeper verde 
-        cor_menor = np.array([100/2, 50, 100])
-        cor_maior = np.array([140/2, 255, 255])
+        cor_menor = np.array([55, 50, 100])
+        cor_maior = np.array([65, 150, 150])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
     
     elif cor == "amarelo":                    # Mascara linha
