@@ -13,27 +13,25 @@ class Robo:
 
     def completar_volta(self):
         while not rospy.is_shutdown():
-            if(self.actions.get_objetivo()==0):
+            if self.actions.get_momento() == 0:
                 self.actions.seguimento_linha()
-                self.actions.encontrou_creeper()        # Verificando que o creeper foi encontrado ou não
-            elif(self.actions.get_objetivo()==1):
-                self.actions.centralizar_creeper()
-            elif(self.actions.get_objetivo()==2):
-                print("2")
+            elif self.actions.get_momento() == 1:
+                self.actions.centraliza_creeper()
+            elif self.actions.get_momento() == 2:
+                self.actions.controla_garra()
+            elif self.actions.get_momento() ==3:
+                self.actions.volta_pista()
+            elif self.actions.get_momento() ==4:
+                self.actions.seguimento_linha()
+
 if __name__=="__main__":
-    
-    # Pegando inputs 
-    cor =  input("Qual cor de creeper desejas: orange,blue ou green: ")
-    id =  input("Qual id desejas (11,12,13,21,22,23) ")
-
+    #cor =  input("Qual cor de creeper desejas: orange,blue ou green: ")
+    #id =  input("Qual id desejas (11,12,13,21,22,23) ")
+    cor, id = "orange", 21
     rospy.init_node('robo')
-
     camera  = Camera()
-    
     camera.set_id_creeper(int(id))
-    camera.set_cor_crepper(cor)
-
+    camera.set_cor_creeper(cor)
     actions = Actions(camera)
     robo = Robo(actions)
-
     robo.completar_volta()
