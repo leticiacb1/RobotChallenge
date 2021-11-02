@@ -7,6 +7,7 @@ import numpy as np
 from math import atan2, degrees
 from geometry_msgs.msg import Twist, Point
 from Sensores import  *
+from garra import Garra
 
 class Actions:
     ''' Aqui iremos coordenar de maneira ordenada as possíveis ações a serem executadas pelo robô sem ordem lógica'''
@@ -18,6 +19,7 @@ class Actions:
         self.camera = camera
         self.laserScan  = Laser()
         self.odometria  =  Odom()
+        self.garra = Garra()
         self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=1)
         self.vel = Twist()
         self.v = 0
@@ -61,9 +63,8 @@ class Actions:
     def centraliza_creeper(self):
         "Centraliza e se movimenta em direção ao creeper"
         if self.estado == 1:
-            if self.laserScan.get_dados()>0.15:
-                print(f"ARUCO:{self.camera.get_corners()}")
-                print(f"COR:{self.camera.creeper_values()[1][0]}")
+            if self.laserScan.get_dados()>0.19:
+                self.garra.posiciona_garra()
                 print(self.laserScan.get_dados())
                 if abs(self.camera.creeper_values()[1][0]-self.camera.creeper_values()[0][0])>4:
                     if self.camera.creeper_values()[1][0]> self.camera.creeper_values()[0][0]:
@@ -95,6 +96,7 @@ class Actions:
         try:
             self.cx,self.cy,self.h,self.w = self.camera.get_valores()
             if self.estado == 0:
+                self.garra.inicio_garra()
                 self.identifica_creeper()
                 self.camera.set_cor("amarelo")
             
@@ -119,6 +121,9 @@ class Actions:
         self.v = 0
         self.o = 0
         self.controla_velocidade()
+        self.garra.fecha_garra()
+        rospy.sleep(2)
+        self.garra.levanta_ombro()
         rospy.sleep(1)
         self.estado = 3
 
@@ -126,12 +131,14 @@ class Actions:
         if self.estado==3 and self.camera.get_contorno():
             self.v = -0.5 
             self.o = 0
-            self.estado = 3
         # else:
         #     if self.angulo - self.odometria.get_angulo()>0:
-        #         self.o = -2
+        #         self.v =  0
+        #         self.o = -
         #     elif self.angulo - self.odometria.get_angulo()<0:
+        #         self.v = 0
         #         self.o = 2
+            #self.controla_velocidade()
         else:
             self.estado = 4
         self.controla_velocidade()

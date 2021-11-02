@@ -292,20 +292,18 @@ class Camera:
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         if cor == "orange":
-            cor_menor = np.array([0, 50, 100])
-            cor_maior = np.array([6, 255, 255])
+            cor_menor = np.array([0, 200, 200])
+            cor_maior = np.array([8, 255, 255])
             segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-            cor_menor = np.array([174, 50, 100])
-            cor_maior = np.array([180, 255, 255])
-            segmentado_cor += cv2.inRange(frame_hsv, cor_menor, cor_maior)
         elif cor == "blue":
-            cor_menor = np.array([167/2, 50, 100])
-            cor_maior = np.array([207/2, 255, 255])
+            cor_menor = np.array([75, 50, 50])
+            cor_maior = np.array([95, 255, 255])
             segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         elif cor == "green":
-            cor_menor = np.array([100/2, 50, 100])
-            cor_maior = np.array([140/2, 255, 255])
+            cor_menor = np.array([45, 100, 100])
+            cor_maior = np.array([75, 255, 255])
             segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+            
         centro = (frame.shape[1]//2, frame.shape[0]//2)
         segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
         if self.creeper_values()[0][0]!=0 and self.get_ids()== self.get_idCreeper():
