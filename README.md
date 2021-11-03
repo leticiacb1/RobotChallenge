@@ -7,11 +7,11 @@ Projeto de Robótica 2021.2
 
 *Para poder ver a simulação basta realizar::*
 > git clone https://github.com/insper-classroom/projeto-de-robotica-reverie
-
+>
 > roslaunch my_simulation trevo.launch
-
+>
 > roslaunch mybot_description mybot_control2.launch 
-
+>
 > rosrun projeto_reverie robo.py
 
 *Integrantes*:
