@@ -76,8 +76,8 @@ class Odom:
            self.angulo  -= 360
         elif self.angulo  < 0:
             self.angulo  += 360
-        print(angulos[2])
-            #print("Posicao (x,y)  ({:.2f} , {:.2f}) + angulo {:.2f}".format(self.x, self.y,angulos[2]))
+        #print(angulos[2])
+        #print("Posicao (x,y)  ({:.2f} , {:.2f}) + angulo {:.2f}".format(self.x, self.y,angulos[2]))
         self.contador += 1
 
     def distancia_centro(self):
@@ -219,12 +219,13 @@ class Camera:
         self.h, self.w = self.cv_image.shape[:2]
         esquerda = self.mask.copy()
         direita = self.mask.copy()
+
         if self.aruco_distance()<35 and self.get_ids()==200 and self.curva =="esquerda":
-            print("Virando a esquerda!")
+            #print("Virando a esquerda!")
             esquerda[:,400:]=0
             self.vision = esquerda
         elif self.aruco_distance()<35 and self.get_ids()==200 and self.curva == "direita":
-            print("Virando a Direita!")
+            #print("Virando a Direita!")
             direita[:,:250]=0
             self.vision = direita
         else:
@@ -303,7 +304,7 @@ class Camera:
             cor_menor = np.array([45, 100, 100])
             cor_maior = np.array([75, 255, 255])
             segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-            
+
         centro = (frame.shape[1]//2, frame.shape[0]//2)
         segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
         if self.creeper_values()[0][0]!=0 and self.get_ids()== self.get_idCreeper():

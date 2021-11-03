@@ -4,14 +4,14 @@
 from __future__ import print_function, division
 import rospy
 import numpy as np
-from Sensores import *
-from actions import Actions
+from sensores import *
+from acoes import Acoes
 
 class Robo:
     def  __init__(self):
         rospy.init_node('robo')
         self.camera = Camera()
-        self.actions = Actions(self.camera)
+        self.actions = Acoes(self.camera)
 
     def set_params(self,cor,id):
         self.camera.set_id_creeper(int(id))
@@ -25,7 +25,7 @@ class Robo:
                 self.actions.centraliza_creeper()
             elif self.actions.get_estado() == 2:
                 self.actions.controla_garra()
-            elif self.actions.get_estado() ==3:
+            elif self.actions.get_estado() == 3:
                 self.actions.volta_pista()
             elif self.actions.get_estado() == 4:
                 self.actions.seguimento_linha()
