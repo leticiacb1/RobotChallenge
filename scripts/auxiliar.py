@@ -64,7 +64,6 @@ def encontrar_centro_dos_contornos(bgr, contornos):
 def regressao_por_centro(bgr, x_array, y_array):
     """
         deve receber uma lista de coordenadas XY, e estimar a melhor reta, utilizando o metodo preferir, que passa pelos centros. Retorne a imagem com a reta e os parametros da reta
-
     """
     img = bgr.copy()
  
@@ -177,26 +176,26 @@ def detect(net, frame, CONFIDENCE, COLORS, CLASSES):
 
     return image, results
 
-def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.: "red")
+def identifica_cor(frame, cor, linha = False): #agora recebe o frame e uma string com a cor(ex.: "red")
     '''
     Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
     '''
-    # frame = cv2.flip(frame, -1) # flip 0: eixo x, 1: eixo y, -1: 2 eixos
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    
-    #selecionar a cor a ser segmentada
-    if cor == "vermelho":
+
+    if cor == "orange":
         cor_menor = np.array([0, 50, 100])
         cor_maior = np.array([6, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-
         cor_menor = np.array([174, 50, 100])
         cor_maior = np.array([180, 255, 255])
-
         segmentado_cor += cv2.inRange(frame_hsv, cor_menor, cor_maior)
-    elif cor == "azul":
-        cor_menor = np.array([220/2, 50, 100])
-        cor_maior = np.array([260/2, 255, 255])
+    elif cor == "blue":
+        cor_menor = np.array([167/2, 50, 100])
+        cor_maior = np.array([207/2, 255, 255])
+        segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+    elif cor == "green":
+        cor_menor = np.array([100/2, 50, 100])
+        cor_maior = np.array([140/2, 255, 255])
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
     elif cor == "amarelo":
         cor_menor = (int(45/2), 50, 50)
@@ -205,12 +204,17 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
 
     centro = (frame.shape[1]//2, frame.shape[0]//2)
 
-
     def cross(img_rgb, point, color, width,length):
         cv2.line(img_rgb, (int( point[0] - length/2 ), point[1] ),  (int( point[0] + length/2 ), point[1]), color ,width, length)
         cv2.line(img_rgb, (point[0], int(point[1] - length/2) ), (point[0], int( point[1] + length/2 ) ),color ,width, length) 
 
     segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
+    if linha:
+        h, w = frame.shape[:2]
+        search_top = 3*h//4 - 50
+        search_bot = 3*h//4 + 20
+        segmentado_cor[0:search_top, 0:w] = 0
+        segmentado_cor[search_bot:h, 0:w] = 0
     contornos, arvore = cv2.findContours(segmentado_cor.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) 
 
     maior_contorno = None
@@ -218,24 +222,26 @@ def identifica_cor(frame, cor): #agora recebe o frame e uma string com a cor(ex.
 
     for cnt in contornos:
         area = cv2.contourArea(cnt)
-        if area > maior_contorno_area:
+        if area > maior_contorno_area:# and area > 150 and area<700:
             maior_contorno = cnt
             maior_contorno_area = area
 
     # Encontramos o centro do contorno fazendo a média de todos seus pontos.
     if not maior_contorno is None :
-        #cv2.drawContours(frame, [maior_contorno], -1, [0, 0, 255], 5)
+        if not linha:
+            cv2.drawContours(frame, [maior_contorno], -1, [255, 0, 0], 5)
         maior_contorno = np.reshape(maior_contorno, (maior_contorno.shape[0], 2))
         media = maior_contorno.mean(axis=0)
         media = media.astype(np.int32)
         #cv2.circle(frame, (media[0], media[1]), 5, [0, 255, 0])
-        #cross(frame, centro, [255,0,0], 1, 17)
+        cross(frame, centro, [255,0,0], 1, 17)
     else:
         media = (0, 0)
-
-    return media, centro, maior_contorno_area, segmentado_cor
+    if linha:
+        return segmentado_cor,maior_contorno_area
+    else:
+        return media, centro, maior_contorno_area
 
 
 if __name__ == "__main__":
     print('Este script não deve ser usado diretamente')
-
