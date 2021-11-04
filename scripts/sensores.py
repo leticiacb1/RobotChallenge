@@ -114,7 +114,7 @@ class Camera:
         #Para identificar aruco
         self.vision =  None
         self.gray = None
-        self.calib_path  = "aruco_assets/"
+        self.calib_path  = "../aruco_assets/"
         self.camera_matrix   = np.loadtxt(self.calib_path+'cameraMatrix_raspi.txt', delimiter=',')
         self.camera_distortion   = np.loadtxt(self.calib_path+'cameraDistortion_raspi.txt', delimiter=',')
         self.aruco_dict  = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
@@ -252,8 +252,8 @@ class Camera:
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        cor_menor = (int(45/2), 50, 50)
-        cor_maior = (int(66/2), 255, 255)
+        cor_menor = (int(44//2), 100, 50)
+        cor_maior = (int(64//2), 255, 255)
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         centro = (frame.shape[1]//2, frame.shape[0]//2)
         segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
@@ -347,7 +347,7 @@ class Camera:
             cv2.imshow("Camera", self.cv_image)
             cv2.imshow("segmentado", segmentado)
             #cv2.imshow("Creeper", creeper)
-            #cv2.imshow("Mascara", self.vision)
+            cv2.imshow("Mascara", self.vision)
             cv2.waitKey(1)
         
         except CvBridgeError as e:

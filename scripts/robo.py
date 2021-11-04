@@ -31,7 +31,8 @@ class Robo:
                 self.actions.seguimento_linha()
 
 if __name__=="__main__":
-    cor, id = "orange", 11
+    cor, id = "blue", 12
+
     robo = Robo()
     robo.set_params(cor,id)
     robo.completar_volta()

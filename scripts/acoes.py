@@ -55,6 +55,18 @@ class Acoes:
     def identifica_creeper(self):
         "Identifica creeper com base em id e cor"
         try:
+            # guarda = 0
+
+            # if self.camera.get_idCreeper() == 13:
+            #     guarda +=1
+            # if guarda>0:
+            #     print(self.laserScan.get_dados())
+            #     if self.laserScan.get_dados()>2.0:
+            #         self.camera.set_id_creeper(23)
+            #     else:
+            #         self.o = -0.2
+            #         self.controla_velocidade()
+            #         self.camera.set_id_creeper(13)
             if self.camera.creeper_values()[0][0]!=0 and self.camera.get_ids()== self.camera.get_idCreeper():
                 self.estado = 1
         except:
@@ -63,7 +75,7 @@ class Acoes:
     def centraliza_creeper(self):
         "Centraliza e se movimenta em direção ao creeper"
         if self.estado == 1:
-            if self.laserScan.get_dados()>0.19:
+            if self.laserScan.get_dados()>0.18:
                 self.garra.posiciona_garra()
                 if abs(self.camera.creeper_values()[1][0]-self.camera.creeper_values()[0][0])>4:
                     if self.camera.creeper_values()[1][0]> self.camera.creeper_values()[0][0]:
@@ -136,7 +148,7 @@ class Acoes:
         self.o = 0
         self.controla_velocidade()
         self.garra.fecha_garra()
-        rospy.sleep(2)
+        rospy.sleep(1)
         self.garra.levanta_ombro()
         rospy.sleep(1)
         self.estado = 3

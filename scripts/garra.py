@@ -16,10 +16,8 @@ class Garra:
 
     def posiciona_garra(self):
         "Inicia a garra aberta e na altura do  pescoço do creeper"
-        self.ombro.publish(-0.16) ## para cima, só um pouco (no 'pescoço')
+        self.ombro.publish(-0.32) ## para cima, só um pouco (no 'pescoço')
         self.garra.publish(-1.0)  ## Aberta
-        print("abre a garra")
-        print("levanta um pouco")
 
     def fecha_garra(self):
         self.garra.publish(0.0) ## Fechada
