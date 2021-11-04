@@ -77,7 +77,7 @@ class Odom:
         elif self.angulo  < 0:
             self.angulo  += 360
         #print(angulos[2])
-        #print("Posicao (x,y)  ({:.2f} , {:.2f}) + angulo {:.2f}".format(self.x, self.y,angulos[2]))
+        #print("Posicao (x,y)  ({:.2f} , {:.2f}) + angulo {:.2f}".format(self.x, self.y,self.angulo))
         self.contador += 1
 
     def distancia_centro(self):
@@ -168,12 +168,13 @@ class Camera:
     
     def creeper_values(self):
         "Getter dos valores essenciais ao creeper"
-        if self.areaCor >  30:
+        if self.areaCor >  130:
             return (self.centro, self.mediaCor, self.areaCor)
         return [0,0],[0,0],0
     
     def get_idCreeper(self):
         return self.id_creeper
+
     
     def get_contorno(self):
         if self.maiorcontorno>150:

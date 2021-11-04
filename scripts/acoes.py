@@ -55,18 +55,6 @@ class Acoes:
     def identifica_creeper(self):
         "Identifica creeper com base em id e cor"
         try:
-            # guarda = 0
-
-            # if self.camera.get_idCreeper() == 13:
-            #     guarda +=1
-            # if guarda>0:
-            #     print(self.laserScan.get_dados())
-            #     if self.laserScan.get_dados()>2.0:
-            #         self.camera.set_id_creeper(23)
-            #     else:
-            #         self.o = -0.2
-            #         self.controla_velocidade()
-            #         self.camera.set_id_creeper(13)
             if self.camera.creeper_values()[0][0]!=0 and self.camera.get_ids()== self.camera.get_idCreeper():
                 self.estado = 1
         except:
@@ -109,11 +97,30 @@ class Acoes:
             return True
         return False
 
+    def creepers_isolados1(self):
+        if self.camera.cor_creeper == "green" and self.camera.get_idCreeper() == 21:
+            inicio_x = (self.odometria.positions()[0]>-2.5 and self.odometria.positions()[0]<-2.2)
+            inicio_y = (self.odometria.positions()[1]>-3.15 and self.odometria.positions()[1]<-2.85)
+            rotacao = (345<self.odometria.get_angulo()<360) or (0<self.odometria.get_angulo()<165)
+            if inicio_x and inicio_y and rotacao:
+                return True
+        return False
+    
+    def creepers_isolados1(self):
+        if self.camera.cor_creeper == "green" and self.camera.get_idCreeper() == 52:
+            inicio_x = (self.odometria.positions()[0]>2.2 and self.odometria.positions()[0]<2.5)
+            inicio_y = (self.odometria.positions()[1]>-3 and self.odometria.positions()[1]<-2.6)
+            rotacao = not((345<self.odometria.get_angulo()<360) or (0<self.odometria.get_angulo()<165))
+            if inicio_x and inicio_y and rotacao:
+                return True
+        return False
+        #if self.camera.get_ids()== 21 
+
     def seguimento_linha(self):
         """Ordena o seguimento da linha"""
         # Receberá funções sensoriais da camera (regressão e centro de massa) e decidirá por onde o robô deve prosseguir
         try:
-            if self.sentido_correto():
+            if self.sentido_correto() or self.creepers_isolados1():
                 self.v = 0
                 self.o = 0.5
             else:
