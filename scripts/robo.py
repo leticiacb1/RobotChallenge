@@ -31,7 +31,7 @@ class Robo:
                 self.actions.seguimento_linha()
 
 if __name__=="__main__":
-    cor, id = "green", 52
+    cor, id = "orange", 21
 
     robo = Robo()
     robo.set_params(cor,id)

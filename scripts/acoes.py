@@ -97,7 +97,7 @@ class Acoes:
             return True
         return False
 
-    def creepers_isolados1(self):
+    def creepers_isolados_21(self):
         if self.camera.cor_creeper == "green" and self.camera.get_idCreeper() == 21:
             inicio_x = (self.odometria.positions()[0]>-2.5 and self.odometria.positions()[0]<-2.2)
             inicio_y = (self.odometria.positions()[1]>-3.15 and self.odometria.positions()[1]<-2.85)
@@ -106,7 +106,7 @@ class Acoes:
                 return True
         return False
     
-    def creepers_isolados1(self):
+    def creepers_isolados_52(self):
         if self.camera.cor_creeper == "green" and self.camera.get_idCreeper() == 52:
             inicio_x = (self.odometria.positions()[0]>2.2 and self.odometria.positions()[0]<2.5)
             inicio_y = (self.odometria.positions()[1]>-3 and self.odometria.positions()[1]<-2.6)
@@ -120,7 +120,7 @@ class Acoes:
         """Ordena o seguimento da linha"""
         # Receberá funções sensoriais da camera (regressão e centro de massa) e decidirá por onde o robô deve prosseguir
         try:
-            if self.sentido_correto() or self.creepers_isolados1():
+            if self.sentido_correto() or self.creepers_isolados_21() or self.creepers_isolados_52():
                 self.v = 0
                 self.o = 0.5
             else:
