@@ -18,10 +18,12 @@ class Acoes:
         o funcionamento adequado das ações de movimentação'''
         self.camera = camera
         self.laserScan  = Laser()
-        self.odometria  =  Odom()
+        self.odometria  = Odom()
+        self.neural = Redeneural()
         self.garra = Garra()
         self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=1)
         self.vel = Twist()
+        self.estacao = None
         self.v = 0
         self.o = 0
 
@@ -52,6 +54,9 @@ class Acoes:
         self.pub.publish(self.vel)
         self.rate.sleep()
 
+    def set_estacao(self,estacao):
+        self.estacao = estacao
+
     def identifica_creeper(self):
         "Identifica creeper com base em id e cor"
         try:
@@ -59,6 +64,28 @@ class Acoes:
                 self.estado = 1
         except:
             pass
+
+    def identifica_estacao(self):
+        "Identifica rede neural"
+        try:
+            if self.neural.get_posicao() != 0 and self.neural.get_estacao()==self.estacao:
+                self.estado = 5
+        except:
+            pass
+
+    def centraliza_estacao(self):
+        if self.estado == 5:
+            if self.laserScan.get_dados()>0.4:
+                if self.neural.get_posicao() > 0 :
+                    self.v = 0.25
+                    self.o = -0.1
+                if self.neural.get_posicao() < 0:
+                    self.v = 0.25
+                    self.o = 0.1
+            else:
+                self.estado = 6
+            self.controla_velocidade()
+
 
     def centraliza_creeper(self):
         "Centraliza e se movimenta em direção ao creeper"
@@ -82,12 +109,10 @@ class Acoes:
     def parada_pista(self):
         inicio_x = (abs(self.odometria.positions()[0])>0 and abs(self.odometria.positions()[0])<0.3)
         inicio_y = (abs(self.odometria.positions()[1])>0 and abs(self.odometria.positions()[1])<0.3)
-        estado_de_parada = self.camera. get_curva()
-        if  inicio_x and  inicio_y and estado_de_parada==2:
-            self.v = 0
-            self.o = 0
-            print("Volta Completada!")
-            self.controla_velocidade()
+        estado_de_parada = self.camera.get_curva()
+        if  inicio_x and  inicio_y and self.estado==8:
+            return True
+        return False
         
     def sentido_correto(self):
         inicio_x = (abs(self.odometria.positions()[0])>0 and abs(self.odometria.positions()[0])<0.3)
@@ -123,13 +148,19 @@ class Acoes:
             if self.sentido_correto() or self.creepers_isolados_21() or self.creepers_isolados_52():
                 self.v = 0
                 self.o = 0.5
+            elif self.parada_pista():
+                self.v = 0
+                self.o = 0
+                print("Volta Completada!")
+                
             else:
                 self.cx,self.cy,self.h,self.w = self.camera.get_valores()
                 if self.estado == 0:
                     self.garra.inicio_garra()
                     self.identifica_creeper()
                     self.camera.set_cor("amarelo")
-                
+                elif self.estado ==4:
+                    self.identifica_estacao()
                 err = self.cx - self.w/2
                 self.v = 0.3
                 self.o = -float(err) / 100
@@ -160,12 +191,30 @@ class Acoes:
         rospy.sleep(1)
         self.estado = 3
 
+    def solta_garra(self):
+        """Receberá a garra e irá coordenar suas ações"""
+        self.v = 0
+        self.o = 0
+        self.controla_velocidade()
+        self.garra.abaixa_ombro()
+        rospy.sleep(1)
+        self.garra.abre_garra()
+        rospy.sleep(1)
+        self.estado = 7
+
     def  volta_pista(self):
-        if self.estado==3 and self.camera.get_contorno():
-            self.v = -0.5 
-            self.o = 0
-        else:
-            self.estado = 4
+        if self.estado==3:
+            if self.camera.get_contorno():
+                self.v = -0.5 
+                self.o = 0
+            else:
+                self.estado = 4
+        elif self.estado==7:
+            if self.camera.get_contorno():
+                self.v = -0.5 
+                self.o = 0
+            else:
+                self.estado = 8
         self.controla_velocidade()
 
 

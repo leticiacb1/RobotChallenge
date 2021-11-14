@@ -17,7 +17,7 @@ import cv2.aruco as aruco
 from geometry_msgs.msg import Twist, Vector3, Pose, Vector3Stamped
 import time
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Header
+from std_msgs.msg import Header,String,Float64
 
 from auxiliar import *
 
@@ -93,6 +93,30 @@ class Odom:
 
     def Subscriber(self):
         return self.subscriber
+
+ #Classe de obteção do node da estacao       
+class Redeneural:
+    def __init__(self):
+        self.recebedor = rospy.Subscriber("/estacao", String, self.recebe_estacao)
+        self.neural_position = rospy.Subscriber("/corner", Float64, self.recebe_posicao)
+        self.estacao = None
+        self.posicao = 0 
+
+    def recebe_estacao(self,msg):
+        try:
+            self.estacao = msg.data
+        except:
+            pass
+    def recebe_posicao(self,msg):
+        try:
+            self.posicao = msg.data
+        except:
+            pass
+    def get_estacao(self):
+        return self.estacao
+    
+    def get_posicao(self):
+        return self.posicao
 
 #  Classe do sensor Câmera, com algumas de suas funções principais:
 class Camera:
@@ -253,7 +277,7 @@ class Camera:
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        cor_menor = (int(44//2), 100, 50)
+        cor_menor = (int(44//2), 100, 100)
         cor_maior = (int(64//2), 255, 255)
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         centro = (frame.shape[1]//2, frame.shape[0]//2)

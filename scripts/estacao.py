@@ -12,7 +12,7 @@ import cv2
 from geometry_msgs.msg import Twist, Vector3, Pose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, CompressedImage
-from std_msgs.msg import String
+from std_msgs.msg import String,Float64
 from cv_bridge import CvBridge, CvBridgeError
 
 
@@ -25,18 +25,23 @@ class Estacao:
         self.bridge = CvBridge()   # Para compressed image
         self.cv_image = None
         self.pub = rospy.Publisher("/estacao", String, queue_size=10)
+        self.corner = rospy.Publisher("/corner", Float64, queue_size=1)
         self.CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
                         "bottle", "bus", "car", "cat", "chair", "cow", "not",
                         "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
                         "sofa", "train", "tvmonitor"]
         self.CONFIDENCE = 0.15
         self.COLORS = np.random.uniform(0, 255, size=(len(self.CLASSES), 3))
-        self.proto = "scripts/mobilenet_detection/MobileNetSSD_deploy.prototxt.txt" # descreve a arquitetura da rede
-        self.model = "scripts/mobilenet_detection/MobileNetSSD_deploy.caffemodel" # contém os pesos da rede em si
+        self.proto = "mobilenet_detection/MobileNetSSD_deploy.prototxt.txt" # descreve a arquitetura da rede
+        self.model = "mobilenet_detection/MobileNetSSD_deploy.caffemodel" # contém os pesos da rede em si
         self.rede = None
         self.resultados = None
         self.label = None
         self.net = None
+        self.alvos = ["cow","horse","boat","dog","car"]
+        self.initial_x = None
+        self.final_x= None
+        self.centro = None
        
 
     def roda_todo_frame(self, imagem):        
@@ -44,7 +49,7 @@ class Estacao:
         try:
             self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
             self.rede,self.resultados =  self.detect()
-            cv2.imshow("Camera", self.cv_image)
+            self.centro = (self.cv_image.shape[1]//2,  self.cv_image.shape[0]//2)
             cv2.imshow("Rede Neural", self.rede)
             #cv2.imshow("Creeper", creeper)
             #cv2.imshow("Mascara", self.vision)
@@ -96,10 +101,8 @@ class Estacao:
                 idx = int(detections[0, 0, i, 1])
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                 (startX, startY, endX, endY) = box.astype("int")
-                if idx ==11: #Ignora a opção mesa de Jantar
-                    pass
-                else:
-                    # display the prediction
+                # display the prediction
+                if self.CLASSES[idx] in self.alvos:
                     self.label = "{}: {:.2f}%".format(self.CLASSES[idx], confidence * 100)
                     print("[INFO] {}".format(self.label))
                     cv2.rectangle(self.rede, (startX, startY), (endX, endY),
@@ -107,9 +110,11 @@ class Estacao:
                     y = startY - 15 if startY - 15 > 15 else startY + 15
                     cv2.putText(self.rede, self.label, (startX, y),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.COLORS[idx], 2)
-
                     self.resultados.append((self.CLASSES[idx], confidence*100, (startX, startY),(endX, endY)))
-        return self.rede, self.resultados#,self.label
+                    self.initial_x = startX
+                    self.final_x = endX
+
+        return self.rede, self.resultados
 
     def publica_estacao(self):
         try:
@@ -118,6 +123,8 @@ class Estacao:
                     try:
                     # Publicando caso exista qual o rotulo da estacao
                         self.pub.publish(String(self.resultados[0][0]))
+                        position = (self.initial_x+ self.final_x)/2 - self.centro[0]
+                        self.corner.publish(Float64(position))
                     except:
                         pass
                 rospy.sleep(0.1)
@@ -126,8 +133,7 @@ class Estacao:
             print("Ocorreu uma exceção com o rospy")
 
 
-       
-
+    
 
 if __name__=="__main__":
     estacao = Estacao()

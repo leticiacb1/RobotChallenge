@@ -13,9 +13,10 @@ class Robo:
         self.camera = Camera()
         self.actions = Acoes(self.camera)
 
-    def set_params(self,cor,id):
+    def set_params(self,cor,id,estacao):
         self.camera.set_id_creeper(int(id))
         self.camera.set_cor_creeper(cor)
+        self.actions.set_estacao(estacao)
 
     def completar_volta(self):
         while not rospy.is_shutdown():
@@ -29,10 +30,18 @@ class Robo:
                 self.actions.volta_pista()
             elif self.actions.get_estado() == 4:
                 self.actions.seguimento_linha()
+            elif self.actions.get_estado() == 5:
+                self.actions.centraliza_estacao()
+            elif self.actions.get_estado() == 6:
+                self.actions.solta_garra()
+            elif self.actions.get_estado() == 7:
+                self.actions.volta_pista()
+            elif self.actions.get_estado() == 8:
+                self.actions.seguimento_linha()
 
 if __name__=="__main__":
-    cor, id = "orange", 21
+    cor, id,estacao = "blue", 22, "dog"
 
     robo = Robo()
-    robo.set_params(cor,id)
+    robo.set_params(cor,id,estacao)
     robo.completar_volta()
