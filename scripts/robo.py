@@ -40,7 +40,7 @@ class Robo:
                 self.actions.seguimento_linha()
 
 if __name__=="__main__":
-    cor, id,estacao = "blue", 22, "dog"
+    cor, id,estacao = "green", 23, "cow"
 
     robo = Robo()
     robo.set_params(cor,id,estacao)

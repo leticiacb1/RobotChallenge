@@ -26,7 +26,7 @@ class Acoes:
         self.estacao = None
         self.v = 0
         self.o = 0
-
+        self.angulo = 0
         self.cx = -1
         self.cy = -1
         self.h = -1
@@ -83,6 +83,7 @@ class Acoes:
                     self.v = 0.25
                     self.o = 0.1
             else:
+                self.angulo = self.odometria.get_angulo()
                 self.estado = 6
             self.controla_velocidade()
 
@@ -204,15 +205,23 @@ class Acoes:
 
     def  volta_pista(self):
         if self.estado==3:
-            if self.camera.get_contorno():
-                self.v = -0.5 
-                self.o = 0
+            if self.camera.get_contorno() and self.laserScan.get_dados()>1.5:
+                if self.odometria.get_angulo()> self.angulo:
+                    self.v = -0.5 
+                    self.o = -0.1
+                else:
+                    self.v = -0.5 
+                    self.o = 0.1
             else:
                 self.estado = 4
         elif self.estado==7:
-            if self.camera.get_contorno():
-                self.v = -0.5 
-                self.o = 0
+            if self.camera.get_contorno() and self.laserScan.get_dados()>1.5:
+                if self.odometria.get_angulo()> self.angulo:
+                    self.v = -0.5 
+                    self.o = -0.1
+                else:
+                    self.v = -0.5 
+                    self.o = 0.1
             else:
                 self.estado = 8
         self.controla_velocidade()
