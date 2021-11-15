@@ -17,7 +17,7 @@ import cv2.aruco as aruco
 from geometry_msgs.msg import Twist, Vector3, Pose, Vector3Stamped
 import time
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Header
+from std_msgs.msg import Header,String,Float64
 
 from auxiliar import *
 
@@ -94,6 +94,30 @@ class Odom:
     def Subscriber(self):
         return self.subscriber
 
+ #Classe de obteção do node da estacao       
+class Redeneural:
+    def __init__(self):
+        self.recebedor = rospy.Subscriber("/estacao", String, self.recebe_estacao)
+        self.neural_position = rospy.Subscriber("/corner", Float64, self.recebe_posicao)
+        self.estacao = None
+        self.posicao = 0 
+
+    def recebe_estacao(self,msg):
+        try:
+            self.estacao = msg.data
+        except:
+            pass
+    def recebe_posicao(self,msg):
+        try:
+            self.posicao = msg.data
+        except:
+            pass
+    def get_estacao(self):
+        return self.estacao
+    
+    def get_posicao(self):
+        return self.posicao
+
 #  Classe do sensor Câmera, com algumas de suas funções principais:
 class Camera:
 
@@ -134,6 +158,8 @@ class Camera:
         self.id_creeper = None
         #Para voltar a pista
         self.maiorcontorno = None
+        #texto
+        self.text = None
 
     #getters
     def get_ids(self):
@@ -168,13 +194,20 @@ class Camera:
     
     def creeper_values(self):
         "Getter dos valores essenciais ao creeper"
-        if self.areaCor >  130:
-            return (self.centro, self.mediaCor, self.areaCor)
-        return [0,0],[0,0],0
+        if self.get_idCreeper()==13:
+            if self.areaCor >  50:
+                return (self.centro, self.mediaCor, self.areaCor)
+            return [0,0],[0,0],0
+        else:
+            if self.areaCor >  130:
+                return (self.centro, self.mediaCor, self.areaCor)
+            return [0,0],[0,0],0
     
     def get_idCreeper(self):
         return self.id_creeper
 
+    def get_corCreeper(self):
+        return self.cor_creeper
     
     def get_contorno(self):
         if self.maiorcontorno>150:
@@ -182,6 +215,9 @@ class Camera:
         return True
 
     #setters
+    def set_texto(self,texto):
+        self.text = texto
+
     def set_curva(self,direcao):
         "Permite modificação da curva"
         self.curva = direcao
@@ -253,11 +289,11 @@ class Camera:
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        cor_menor = (int(44//2), 100, 50)
+        cor_menor = (int(44//2), 180, 180)
         cor_maior = (int(64//2), 255, 255)
-        segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+        mescla = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         centro = (frame.shape[1]//2, frame.shape[0]//2)
-        segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
+        segmentado_cor = cv2.morphologyEx(mescla,cv2.MORPH_CLOSE,np.ones((7, 7)))	
 
         self.h, self.w = frame.shape[:2]
         search_top = 3*self.h//4 - 50
@@ -293,21 +329,22 @@ class Camera:
         Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
         if cor == "orange":
             cor_menor = np.array([0, 200, 200])
             cor_maior = np.array([8, 255, 255])
-            segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+            mescla = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         elif cor == "blue":
             cor_menor = np.array([75, 50, 50])
             cor_maior = np.array([95, 255, 255])
-            segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
+            mescla = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         elif cor == "green":
             cor_menor = np.array([45, 100, 100])
             cor_maior = np.array([75, 255, 255])
-            segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-
+            mescla = cv2.inRange(frame_hsv, cor_menor, cor_maior)
         centro = (frame.shape[1]//2, frame.shape[0]//2)
-        segmentado_cor = cv2.morphologyEx(segmentado_cor,cv2.MORPH_CLOSE,np.ones((7, 7)))	
+        segmentado_cor = cv2.morphologyEx(mescla,cv2.MORPH_CLOSE,np.ones((7, 7)))	
+   
         if self.creeper_values()[0][0]!=0 and self.get_ids()== self.get_idCreeper():
             self.h, self.w = frame.shape[:2]
             corte = int(self.get_corners())
@@ -345,10 +382,11 @@ class Camera:
             self.mask,self.maiorcontorno = self.segmenta_linha(self.cv_image)
             self.centro, self.mediaCor, self.areaCor,segmentado = self.segmenta_creeper(creeper,self.cor_creeper)
             self.centro_de_massa()
+            cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.8, (0,255,0))
             cv2.imshow("Camera", self.cv_image)
-            cv2.imshow("segmentado", segmentado)
+            #cv2.imshow("segmentado", segmentado)
             #cv2.imshow("Creeper", creeper)
-            cv2.imshow("Mascara", self.vision)
+            #cv2.imshow("Mascara", self.vision)
             cv2.waitKey(1)
         
         except CvBridgeError as e:

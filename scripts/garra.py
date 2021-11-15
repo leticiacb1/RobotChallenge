@@ -24,6 +24,12 @@ class Garra:
     
     def levanta_ombro(self):
         self.ombro.publish(2)
+    
+    def abaixa_ombro(self):
+        self.ombro.publish(-1.0)
+    
+    def abre_garra(self):
+        self.garra.publish(-1.0)  ## Aberta
 
 
     def largar_objeto(self, momento):

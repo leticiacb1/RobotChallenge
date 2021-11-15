@@ -5,14 +5,38 @@ Projeto de Robótica 2021.2
 *Para ter acesso completo as funcionalidades deste repositório, caso não possua algumas das bibliotecas, realizar:*
 > pip install -r requirements.txt
 
-*Para poder ver a simulação basta realizar::*
-> git clone https://github.com/insper-classroom/projeto-de-robotica-reverie
->
-> roslaunch my_simulation trevo.launch
->
-> roslaunch mybot_description mybot_control2.launch 
->
-> rosrun projeto_reverie robo.py
+*Para poder ver a simulação basta realizar o clone do repositório em um terminal, entrar na pasta scripts e executar o simulador:*
+```bash
+cd catkin_ws/src 
+
+git clone https://github.com/insper-classroom/projeto-de-robotica-reverie
+
+cd projeto_reverie/scripts
+
+roslaunch my_simulation trevo.launch
+```
+
+*Em outro terminal, execute o seguinte comando para permitir a execução dos comandos da garra:*
+```bash
+
+roslaunch mybot_description mybot_control2.launch 
+
+```
+
+*Abra outro terminal para executar o node de prestação de serviço de identificação de estação via Rede neural, rode comando abaixo:*
+```bash
+
+rosrun projeto_reverie estacao.py
+
+```
+
+*Finalmente, rode o comando abaixo e escolha a situação a ser simulada dentro do programa:*
+```bash
+
+rosrun projeto_reverie robo.py
+
+```
+
 
 *Integrantes*:
 
@@ -26,8 +50,11 @@ Projeto de Robótica 2021.2
 * Conceito I : Atingido :heavy_check_mark:
 * Conceito C : Atingido :heavy_check_mark:
 * Conceito C+ : Atingido :heavy_check_mark:
-* Conceito B : Buscando :warning:
-Para atingir o conceito B, faltam acertar todas as ID's, especificas para creepers poscionados mais lateralmente (utilizando odometria) e incluir identificação da estação via rede neural, e adição do estado de busca, e posicionamento na estação.
+* Conceito B : Atingido :heavy_check_mark:
+* Conceito B+ : Atingido :heavy_check_mark:
+* Conceito A : Buscando :warning:
+
+Falta apenas garantir encontrar estação "car" em ocasiões e implantar controle derivativo, além de refatorar o código.
 
 # Objetivos 
 
@@ -45,7 +72,3 @@ goal2 = ("green", 23, "car")
 goal3 = ("orange", 11, "cow")
 ```
 ```
-
-
-A lista de todas as possibilidades que seu programa pode encontrar [está neste link](./todas_possibilidades.md). Lembre-se de que o código deve estar preparado para funcionar com *qualquer uma*. 
-
