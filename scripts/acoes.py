@@ -24,8 +24,8 @@ class Acoes:
         self.pub  = rospy.Publisher("cmd_vel", Twist, queue_size=1)
         self.vel = Twist()
         self.estacao = None
-        self.v = 0
-        self.o = 0
+        self.lin = 0
+        self.ang = 0
         self.angulo = 0
         self.cx = -1
         self.cy = -1
@@ -40,6 +40,8 @@ class Acoes:
         self.volta = 0
 
         self.estado = 0
+
+        self.segue_creeper_13 = False   # Variável para creeper problemático 13
     
     def get_estado(self):
         return self.estado
@@ -49,8 +51,8 @@ class Acoes:
 
     def controla_velocidade(self):
         '''Realiza controle da velocidade do Robô'''
-        self.vel.linear.x = self.v
-        self.vel.angular.z = self.o
+        self.vel.linear.x = self.lin
+        self.vel.angular.z = self.ang
         self.pub.publish(self.vel)
         self.rate.sleep()
 
@@ -77,11 +79,11 @@ class Acoes:
         if self.estado == 5:
             if self.laserScan.get_dados()>0.4:
                 if self.neural.get_posicao() > 0 :
-                    self.v = 0.25
-                    self.o = -0.1
+                    self.lin = 0.25
+                    self.ang = -0.1
                 if self.neural.get_posicao() < 0:
-                    self.v = 0.25
-                    self.o = 0.1
+                    self.lin = 0.25
+                    self.ang = 0.1
             else:
                 self.angulo = self.odometria.get_angulo()
                 self.estado = 6
@@ -95,12 +97,12 @@ class Acoes:
                 self.garra.posiciona_garra()
                 if abs(self.camera.creeper_values()[1][0]-self.camera.creeper_values()[0][0])>4:
                     if self.camera.creeper_values()[1][0]> self.camera.creeper_values()[0][0]:
-                        self.v = 0.15
-                        self.o = 0.1
+                        self.lin = 0.15
+                        self.ang = 0.1
                         
                     elif self.camera.creeper_values()[1][0]<self.camera.creeper_values()[0][0]:
-                        self.v = 0.15
-                        self.o = -0.1
+                        self.lin = 0.15
+                        self.ang = -0.1
             else:
                 self.angulo = self.odometria.get_angulo()
                 self.estado = 2
@@ -140,18 +142,50 @@ class Acoes:
             if inicio_x and inicio_y and rotacao:
                 return True
         return False
-        #if self.camera.get_ids()== 21 
+
+
+    def creepers_isolados_13(self):
+        if self.camera.cor_creeper == "green" and self.camera.get_idCreeper() == 13:
+            inicio_x = (self.odometria.positions()[0]>-0.1 and self.odometria.positions()[0]<0.2)
+            inicio_y = (self.odometria.positions()[1]>-0.1 and self.odometria.positions()[1]<0.2)
+            rotacao = not((345<self.odometria.get_angulo()<360) or (0<self.odometria.get_angulo()<15))
+
+            if(not(rotacao)):
+                self.segue_creeper_13 = True
+
+            if inicio_x and inicio_y and rotacao:
+                return True
+
+        return False
+
+    def creeper_12(self):
+        if self.camera.cor_creeper == "blue" and self.camera.get_idCreeper() == 12:
+            inicio_x = (self.odometria.positions()[0]>-0.1 and self.odometria.positions()[0]<0.2)
+            inicio_y = (self.odometria.positions()[1]>-0.1 and self.odometria.positions()[1]<0.2)
+            rotacao = not(180<self.odometria.get_angulo()<210)
+            if inicio_x and inicio_y and rotacao:
+                return True
+        return False
 
     def seguimento_linha(self):
         """Ordena o seguimento da linha"""
         # Receberá funções sensoriais da camera (regressão e centro de massa) e decidirá por onde o robô deve prosseguir
         try:
-            if self.sentido_correto() or self.creepers_isolados_21() or self.creepers_isolados_52():
-                self.v = 0
-                self.o = 0.5
+            if self.sentido_correto() and not(self.estado ==0):
+                self.lin = 0
+                self.ang = 0
+                print("Ajeitando sentido!")
+
+            elif self.estado == 0 and (self.creepers_isolados_21() or self.creepers_isolados_52()):
+                self.lin = 0
+                self.ang = 0.5
+
+            elif self.estado == 0 and  self.creepers_isolados_13():
+                self.lin = 0
+                self.ang = -0.5
             elif self.parada_pista():
-                self.v = 0
-                self.o = 0
+                self.lin = 0
+                self.ang = 0
                 print("Volta Completada!")
                 
             else:
@@ -163,8 +197,8 @@ class Acoes:
                 elif self.estado ==4:
                     self.identifica_estacao()
                 err = self.cx - self.w/2
-                self.v = 0.3
-                self.o = -float(err) / 100
+                self.lin = 0.3
+                self.ang = -float(err) / 100
                 if self.odometria.distancia_centro()>2 and self.volta == 0:
                     self.camera.set_curva("direita")   
                     self.volta=1
@@ -183,8 +217,8 @@ class Acoes:
 
     def controla_garra(self):
         """Receberá a garra e irá coordenar suas ações"""
-        self.v = 0
-        self.o = 0
+        self.lin = 0
+        self.ang = 0
         self.controla_velocidade()
         self.garra.fecha_garra()
         rospy.sleep(1)
@@ -194,8 +228,8 @@ class Acoes:
 
     def solta_garra(self):
         """Receberá a garra e irá coordenar suas ações"""
-        self.v = 0
-        self.o = 0
+        self.lin = 0
+        self.ang = 0
         self.controla_velocidade()
         self.garra.abaixa_ombro()
         rospy.sleep(1)
@@ -207,28 +241,31 @@ class Acoes:
         if self.estado==3:
             if self.camera.get_contorno():
                 if self.odometria.get_angulo()> self.angulo:
-                    self.v = -0.5 
-                    self.o = -0.1
+                    self.lin = -0.5 
+                    if self.camera.get_idCreeper() ==13:
+                        self.ang = 0
+                    else:
+                        self.ang = -0.1
                 else:
-                    self.v = -0.5 
-                    self.o = 0.1
+                    self.lin = -0.5 
+                    if self.camera.get_idCreeper() ==13:
+                        self.ang = 0
+                    else:
+                        self.ang = 0.1
             else:
                 self.estado = 4
         elif self.estado==7:
             if self.camera.get_contorno():
                 if self.odometria.get_angulo()> self.angulo:
-                    self.v = -0.5 
-                    self.o = -0.1
+                    self.lin = -0.5 
+                    self.ang = -0.1
                 else:
-                    self.v = -0.5 
-                    self.o = 0.1
+                    self.lin = -0.5 
+                    self.ang = 0.1
             else:
                 self.estado = 8
         self.controla_velocidade()
 
-
-    def decisao_aruco(self):
-        pass
 
 if __name__=="__main__":
     print('Este script não deve ser usado diretamente')

@@ -159,7 +159,7 @@ class Camera:
         #Para voltar a pista
         self.maiorcontorno = None
         #texto
-        self.text = f"Procurando Creeper {self.cor_creeper} da id {self.id_creeper}"
+        self.text = None
 
     #getters
     def get_ids(self):
@@ -194,13 +194,20 @@ class Camera:
     
     def creeper_values(self):
         "Getter dos valores essenciais ao creeper"
-        if self.areaCor >  130:
-            return (self.centro, self.mediaCor, self.areaCor)
-        return [0,0],[0,0],0
+        if self.get_idCreeper()==13:
+            if self.areaCor >  50:
+                return (self.centro, self.mediaCor, self.areaCor)
+            return [0,0],[0,0],0
+        else:
+            if self.areaCor >  130:
+                return (self.centro, self.mediaCor, self.areaCor)
+            return [0,0],[0,0],0
     
     def get_idCreeper(self):
         return self.id_creeper
 
+    def get_corCreeper(self):
+        return self.cor_creeper
     
     def get_contorno(self):
         if self.maiorcontorno>150:
@@ -375,7 +382,7 @@ class Camera:
             self.mask,self.maiorcontorno = self.segmenta_linha(self.cv_image)
             self.centro, self.mediaCor, self.areaCor,segmentado = self.segmenta_creeper(creeper,self.cor_creeper)
             self.centro_de_massa()
-            cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.5, (0,0,255))
+            cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.8, (0,255,0))
             cv2.imshow("Camera", self.cv_image)
             #cv2.imshow("segmentado", segmentado)
             #cv2.imshow("Creeper", creeper)
