@@ -158,6 +158,8 @@ class Camera:
         self.id_creeper = None
         #Para voltar a pista
         self.maiorcontorno = None
+        #texto
+        self.text = f"Procurando Creeper {self.cor_creeper} da id {self.id_creeper}"
 
     #getters
     def get_ids(self):
@@ -206,6 +208,9 @@ class Camera:
         return True
 
     #setters
+    def set_texto(self,texto):
+        self.text = texto
+
     def set_curva(self,direcao):
         "Permite modificação da curva"
         self.curva = direcao
@@ -317,6 +322,7 @@ class Camera:
         Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
         if cor == "orange":
             cor_menor = np.array([0, 200, 200])
             cor_maior = np.array([8, 255, 255])
@@ -329,9 +335,9 @@ class Camera:
             cor_menor = np.array([45, 100, 100])
             cor_maior = np.array([75, 255, 255])
             mescla = cv2.inRange(frame_hsv, cor_menor, cor_maior)
-
         centro = (frame.shape[1]//2, frame.shape[0]//2)
         segmentado_cor = cv2.morphologyEx(mescla,cv2.MORPH_CLOSE,np.ones((7, 7)))	
+   
         if self.creeper_values()[0][0]!=0 and self.get_ids()== self.get_idCreeper():
             self.h, self.w = frame.shape[:2]
             corte = int(self.get_corners())
@@ -369,10 +375,11 @@ class Camera:
             self.mask,self.maiorcontorno = self.segmenta_linha(self.cv_image)
             self.centro, self.mediaCor, self.areaCor,segmentado = self.segmenta_creeper(creeper,self.cor_creeper)
             self.centro_de_massa()
+            cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.5, (0,0,255))
             cv2.imshow("Camera", self.cv_image)
-            cv2.imshow("segmentado", segmentado)
+            #cv2.imshow("segmentado", segmentado)
             #cv2.imshow("Creeper", creeper)
-            cv2.imshow("Mascara", self.vision)
+            #cv2.imshow("Mascara", self.vision)
             cv2.waitKey(1)
         
         except CvBridgeError as e:

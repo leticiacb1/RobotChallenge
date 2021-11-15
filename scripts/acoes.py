@@ -205,7 +205,7 @@ class Acoes:
 
     def  volta_pista(self):
         if self.estado==3:
-            if self.camera.get_contorno() and self.laserScan.get_dados()>1.5:
+            if self.camera.get_contorno():
                 if self.odometria.get_angulo()> self.angulo:
                     self.v = -0.5 
                     self.o = -0.1
@@ -215,7 +215,7 @@ class Acoes:
             else:
                 self.estado = 4
         elif self.estado==7:
-            if self.camera.get_contorno() and self.laserScan.get_dados()>1.5:
+            if self.camera.get_contorno():
                 if self.odometria.get_angulo()> self.angulo:
                     self.v = -0.5 
                     self.o = -0.1

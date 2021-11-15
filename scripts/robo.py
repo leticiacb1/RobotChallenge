@@ -24,23 +24,39 @@ class Robo:
                 self.actions.seguimento_linha()
             elif self.actions.get_estado() == 1:
                 self.actions.centraliza_creeper()
+                self.camera.set_texto("Achei o Creeper! Centralizando!")
+                print("Achei o Creeper! Centralizando!")
             elif self.actions.get_estado() == 2:
                 self.actions.controla_garra()
+                self.camera.set_texto("Capturando Creeper")
+                print("Capturando Creeper")
             elif self.actions.get_estado() == 3:
                 self.actions.volta_pista()
+                self.camera.set_texto("Voltando pra pista")
+                print("Voltando pra pista")
             elif self.actions.get_estado() == 4:
                 self.actions.seguimento_linha()
+                self.camera.set_texto(f"Procurando estacao")
+                print("Procurando estacao")
             elif self.actions.get_estado() == 5:
                 self.actions.centraliza_estacao()
+                self.camera.set_texto(f"Achei Estacao, se aproximando!")
+                print("Achei Estacao, se aproximando!")
             elif self.actions.get_estado() == 6:
                 self.actions.solta_garra()
+                self.camera.set_texto(f"Soltando Creeper")
+                print("Soltando Creeper")
             elif self.actions.get_estado() == 7:
                 self.actions.volta_pista()
+                self.camera.set_texto(f"Voltando pra pista")
+                print("Voltando pra pista")
             elif self.actions.get_estado() == 8:
                 self.actions.seguimento_linha()
+                self.camera.set_texto(f"Finalizando circuito")
+                print("Finalizando circuito")
 
 if __name__=="__main__":
-    cor, id,estacao = "green", 23, "cow"
+    cor, id,estacao = "green", 21, "cow"
 
     robo = Robo()
     robo.set_params(cor,id,estacao)
