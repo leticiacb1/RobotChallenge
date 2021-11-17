@@ -7,20 +7,36 @@ import numpy as np
 from sensores import *
 from acoes import Acoes
 
+__authors__ = ["Leticia Côelho","Lorran Caetano","Matheus Oliveira","Ykaro de Andrade"]
+
+#================================CLASSES DE CONTROLE DO ROBÔ=================================#
+
 class Robo:
+    "Classe que define ações e parãmetros de busca das ações a serem executadas"
     def  __init__(self):
+        "Recebe os outros objetos já descritos"
         rospy.init_node('robo')
         self.camera = Camera()
         self.actions = Acoes(self.camera)
         self.estacao = None
 
     def set_params(self,cor,id,estacao):
+        "Exporta os parâmetros de definição da missão escolhida"
         self.camera.set_id_creeper(int(id))
         self.camera.set_cor_creeper(cor)
         self.actions.set_estacao(estacao)
         self.estacao = estacao
 
-    def completar_volta(self):
+    def dar_volta(self):
+        "Caso seja escolhido pelo usuário, robô apenas completa a volta, sem escolher creeper"
+        while not rospy.is_shutdown():
+            if self.actions.get_estado() == 0:
+                self.actions.completa_volta()
+                self.camera.set_texto("Completando volta")
+                print("Completnado volta e parando")
+
+    def circuitocompleto(self):
+        "Completa de acordo com ações do usuário, seguindo máquina de estações"
         while not rospy.is_shutdown():
             if self.actions.get_estado() == 0:
                 self.actions.seguimento_linha()
@@ -55,13 +71,27 @@ class Robo:
                 self.camera.set_texto(f"Voltando pra pista")
                 print("Voltando pra pista")
             elif self.actions.get_estado() == 8:
-                self.actions.seguimento_linha()
+                self.actions.completa_volta()
                 self.camera.set_texto(f"Finalizando circuito")
                 print("Finalizando circuito")
 
 if __name__=="__main__":
-    cor, id,estacao = "blue", 22, "boat"
-
-    robo = Robo()
-    robo.set_params(cor,id,estacao)
-    robo.completar_volta()
+    cores = ["green","orange","blue"]
+    
+    print('''Deseja qual objetivo para cumprir?
+    
+    1 - Apenas seguir pista
+    
+    2 - Completar uma missão''')
+    ans = int(input("Digite aqui: "))
+    if ans ==1:
+        robo = Robo()
+        robo.dar_volta()
+    elif ans == 2:
+        print('''Digite aqui qual missão deseja executar \n''')
+        cor = (input("Cor do Creeper aqui: "))
+        id = int(input("Id do Creeper aqui: "))
+        estacao = (input("Estacao desejada aqui: "))
+        robo = Robo()
+        robo.set_params(cor,id,estacao)
+        robo.circuitocompleto()

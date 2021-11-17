@@ -46,6 +46,7 @@ rosrun projeto_reverie robo.py
 - Ykaro Andrade
 
 > Status do Projeto: Em desenvolvimento :warning: 
+> Features realizadas: Programação orientada a objetos,Controle Derivativo e Node prestando serviço (estacao.py):warning: 
 
 * Conceito I : Atingido :heavy_check_mark:
 * Conceito C : Atingido :heavy_check_mark:
@@ -71,4 +72,4 @@ goal2 = ("green", 23, "car")
 
 goal3 = ("orange", 11, "cow")
 ```
-```
+

@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-__author__ = ["Rachel P. B. Moraes", "Igor Montagner", "Fabio Miranda"]
+__authors__ = ["Leticia Côelho","Lorran Caetano","Matheus Oliveira","Ykaro de Andrade"]
 
 
 import rospy
@@ -16,16 +16,20 @@ from std_msgs.msg import String,Float64
 from cv_bridge import CvBridge, CvBridgeError
 
 
-
+#================================NODE QUE PRESTS SERVIÇO AO PRINCIPAL=================================#
 class Estacao:
+    "Irá identificar via callback da rede neural as estações e publicar para alimentação do subscriber no node principal"
     def __init__(self):
+        #=====Atributos da callback==============#
         rospy.init_node("estacao")
         self.topico_imagem = "/camera/image/compressed"
         self.subscriber = rospy.Subscriber(self.topico_imagem , CompressedImage, self.roda_todo_frame, queue_size=4, buff_size = 2**24)
         self.bridge = CvBridge()   # Para compressed image
         self.cv_image = None
+        #=====Atributos da publicação==============#
         self.pub = rospy.Publisher("/estacao", String, queue_size=10)
         self.corner = rospy.Publisher("/corner", Float64, queue_size=1)
+        #=====Atributos da rede neural==============#
         self.CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
                         "bottle", "bus", "car", "cat", "chair", "cow", "not",
                         "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
@@ -117,6 +121,7 @@ class Estacao:
         return self.rede, self.resultados
 
     def publica_estacao(self):
+        "Publica a posição x da rede neural para utilização e centralização do robo"
         try:
             while not rospy.is_shutdown():
                 if self.resultados is not None:

@@ -19,29 +19,28 @@ import time
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header,String,Float64
 
-from auxiliar import *
 
-# Classes de sensores que serão chamadas pelo robô e pela máquina de estações.
+__authors__ = ["Leticia Côelho","Lorran Caetano","Matheus Oliveira","Ykaro de Andrade"]
+
+#================================CLASSES SENSORIAIS=================================#
 
 # Classe do sensor laser, com algumas de suas funções principais:
 class Laser:
-
+    "Classe sensorial do  LAser, guia o Robô de acordo com distâncias a objetos do cenário"
     def __init__(self):
+        #=====Atributos da callback==============#
         self.subscriber = rospy.Subscriber("/scan", LaserScan, self.scaneou)
-        self.segue = True                                                           # Variável que irá deterfinar se o robô segue ou não
         self.distancia = None
         self.dados = None
 
-    # Recebe self.dados do sensor e distância de parada:
+    #================================Callback=================================#
     def scaneou(self, dado):
+        "Função assincrona que registra dados de distância"
         self.dados = np.array(dado.ranges).round(decimals=2)
-        #print(self.dados[0])
 
-
-    def keep_going(self):
-        return self.segue
-    
+    #================================Funções de exportações=================================#
     def get_dados(self):
+        "Exporta a distância relativa a frente do robô"
         if self.dados is not None:
     	    return self.dados[0]
 
@@ -49,20 +48,20 @@ class Laser:
         return self.subscriber
 
 
-# Classe do sensor Odometria, com algumas de suas funções principais:
+#Classe do sensor Odometria, com algumas de suas funções principais:
 class Odom:
-
+    "Classe sensorial da Odometria, guia o Robô de acordo com posições e angulações para boa execução do objetivo"
     def __init__(self):
+        #=====Atributos da callback==============#
         self.subscriber = rospy.Subscriber("/odom", Odometry, self.recebe_odometria)
         self.x = 0
         self.y = 0
         self.z = 0
-        self.contador = 0
-        self.pula = 10
         self.angulo = 0
 
+    #================================Callback=================================#
     def recebe_odometria(self, data):
-        "Função assincrona para registrar odometria"
+        "Função assincrona para registrar odometria, e guardar dados essencias para uso posterior"
         self.x = data.pose.pose.position.x
         self.y = data.pose.pose.position.y
 
@@ -70,16 +69,13 @@ class Odom:
         lista = [quat.x, quat.y, quat.z, quat.w]
         angulos = np.degrees(transformations.euler_from_quaternion(lista))    
         self.angulo = angulos[2]
-        if self.contador % self.pula == 0:
-            pass
+        #Conserta angulação
         if self.angulo > 360:
            self.angulo  -= 360
         elif self.angulo  < 0:
             self.angulo  += 360
-        #print(angulos[2])
-        #print("Posicao (x,y)  ({:.2f} , {:.2f}) + angulo {:.2f}".format(self.x, self.y,self.angulo))
-        self.contador += 1
 
+    #================================Funções de exportações=================================#
     def distancia_centro(self):
         "Retorna distancias relativas ao ponto de partida"
         return np.sqrt(self.x**2 + self.y**2)
@@ -89,6 +85,7 @@ class Odom:
         return (self.x,self.y)
 
     def get_angulo(self):
+        "Retorna angulação do robô"
         return self.angulo
 
     def Subscriber(self):
@@ -96,46 +93,58 @@ class Odom:
 
  #Classe de obteção do node da estacao       
 class Redeneural:
+    "Classe sensorial da node Rede neural,que presta serviço a este, essencial para identificação e aproximação de estações"
     def __init__(self):
+        #=====Atributos da callback==============#
         self.recebedor = rospy.Subscriber("/estacao", String, self.recebe_estacao)
         self.neural_position = rospy.Subscriber("/corner", Float64, self.recebe_posicao)
         self.estacao = None
         self.posicao = 0 
-
+    #================================Callback=================================#
     def recebe_estacao(self,msg):
+        "Recebe as informações oferecidas pelos nodes que prestam serviço e as estabelecem como atributo, em específico o label da estação"
         try:
-            self.estacao = msg.data
+            if msg.data == "boat":
+                self.estacao = "horse"
+            else:
+                self.estacao = msg.data
         except:
             pass
+
     def recebe_posicao(self,msg):
+        "Recebe as informações oferecidas pelos nodes que prestam serviço e as estabelecem como atributo, em específico a posição X da estação"
         try:
             self.posicao = msg.data
         except:
             pass
+
+    #================================Getters=================================#
     def get_estacao(self):
+        "Exporta estação identificada"
         return self.estacao
     
     def get_posicao(self):
+        "Exporta posição identificada"
         return self.posicao
 
-#  Classe do sensor Câmera, com algumas de suas funções principais:
+# Classe do sensor Câmera, com algumas de suas funções principais:
 class Camera:
-
+    "Classe sensorial da câmera, essencial para obter valores e sinais de segmentação de cores, tal qual guiar o percurso"
     def __init__(self):
-        #Essenciais para captar imagens
+        "Construtor da classe câmera"
+        #=====Atributos da callback==============#
         self.topico_imagem = "/camera/image/compressed"
         self.subscriber = rospy.Subscriber(self.topico_imagem , CompressedImage, self.roda_todo_frame, queue_size=4, buff_size = 2**24)
         self.bridge = CvBridge()   # Para compressed image
         self.cv_image = None
-        #Para seguir linha
-        self.cor = ""
+        #=====Atributos para seguir linha==============#
         self.mask = None
         self.M = None
         self.cx = -1
         self.cy = -1
         self.h = -1
         self.w = -1
-        #Para identificar aruco
+        #=====Atributos para identificar aruco==============#
         self.vision =  None
         self.gray = None
         self.calib_path  = "../aruco_assets/"
@@ -150,18 +159,21 @@ class Camera:
         self.rvec = None
         self.tvec = None
         self.curva = "esquerda"
-        #Para centralizar em creeper
+        #=====Atributos para identificar creeper==============#
         self.centro = []           # Informações filtro de cor.
         self.mediaCor = []
         self.areaCor = 0.0
         self.cor_creeper = None
         self.id_creeper = None
-        #Para voltar a pista
+        #=====Atributos para realizar o retorno a pista==============#
+        self.mascara_recorte = True
         self.maiorcontorno = None
-        #texto
+        #=====Atributos para printar na tela==============#
         self.text = None
 
-    #getters
+       
+
+    #================================getters=================================#
     def get_ids(self):
         "Retorno das ids aruco identificadas"
         try:
@@ -170,6 +182,7 @@ class Camera:
             return None
 
     def get_corners(self):
+        "Retorna coordenadas x do aruco identificado do creeper para ajuste de centralização"
         m  = 0
         if self.get_ids() == self.get_idCreeper(): 
             try:
@@ -193,7 +206,7 @@ class Camera:
         return self.cx, self.cy, self.h, self.w
     
     def creeper_values(self):
-        "Getter dos valores essenciais ao creeper"
+        "Getter dos valores essenciais ao creeper, como posição de cor, tela, e área medida"
         if self.get_idCreeper()==13:
             if self.areaCor >  50:
                 return (self.centro, self.mediaCor, self.areaCor)
@@ -204,43 +217,50 @@ class Camera:
             return [0,0],[0,0],0
     
     def get_idCreeper(self):
+        "Retorna id do creeper setado  pelo usuário"
         return self.id_creeper
 
     def get_corCreeper(self):
+        "Retorna cor do creeper setado pelo usuário"
         return self.cor_creeper
     
     def get_contorno(self):
-        if self.maiorcontorno>150:
-            return False
-        return True
+        "Retorna o tamanho da áreade contorno da pista para fins de volta a ela"
+        if not self.mascara_recorte:
+            return self.maiorcontorno
+        return 0
 
-    #setters
+    #================================setters=================================#
+    def set_mascara_recorte(self,boolean):
+        "Condição que faz o recorte da mascára da amarela da pista, permite identificação ou não de pedaços para sua volta"
+        self.mascara_recorte = boolean
+
     def set_texto(self,texto):
+        "Setta texto a ser printado na imagem do robô"
         self.text = texto
 
     def set_curva(self,direcao):
-        "Permite modificação da curva"
+        "Permite modificação da curva, isto é sua direção no circuito"
         self.curva = direcao
 
     def set_cor_creeper(self, cor):
+        "Permite modificar a cor do creeper buscado"
         self.cor_creeper = cor
     
     
     def set_id_creeper(self, id):
+        "Permite modificar a id do creeper buscado"
         self.id_creeper = id
 
-    def set_cor(self,cor):
-        "Permite da modificação da cor de segmentação"
-        self.cor = cor
 
-    #funções identitárias
+    #================================Funções relativas a detecção aruco=================================#
     def aruco_detection(self):
-        "Detecta arucos"
+        "Detecta arucos pelo cenário"
         self.gray = cv2.cvtColor(self.aruco_image, cv2.COLOR_BGR2GRAY)
         self.corners, self.ids, _ = aruco.detectMarkers(self.gray, self.aruco_dict)
 
     def aruco_markers(self):
-        "Faz marca dos arucos"
+        "Faz marca dos arucos na tela vista do robô, e guarda valores essenciais para detecção"
         self.aruco_detection()
         try:
             self.ret = aruco.estimatePoseSingleMarkers(self.corners, self.marker_size, self.camera_matrix, self.camera_distortion)
@@ -251,26 +271,25 @@ class Camera:
         except:
             pass
 
+    #================================Funções relativas a segmentação de cores do cenário=================================#
     def faixa_imagem(self):
-        "Recorta a faixa a altura de visão do robô para seguir linha, além de cortes para percorre-la"
+        "Recorta a faixa a altura de visão do robô para seguir linha, além de cortes para percorre-la, isto é força uma visão para robô seguir por uma direção na curva."
         self.h, self.w = self.cv_image.shape[:2]
         esquerda = self.mask.copy()
         direita = self.mask.copy()
 
         if self.aruco_distance()<35 and self.get_ids()==200 and self.curva =="esquerda":
-            #print("Virando a esquerda!")
             esquerda[:,400:]=0
             self.vision = esquerda
         elif self.aruco_distance()<35 and self.get_ids()==200 and self.curva == "direita":
-            #print("Virando a Direita!")
             direita[:,:250]=0
             self.vision = direita
         else:
-            #print("Seguindo Linha!")    
+  
             self.vision =  self.mask
        
     def centro_de_massa(self):
-        "Define centro de massa da figura"
+        "Define centro de massa da figura segmentada"
         self.aruco_markers()
         self.faixa_imagem()
         self.M = cv2.moments(self.vision)
@@ -280,15 +299,15 @@ class Camera:
             cv2.circle(self.cv_image, (self.cx, self.cy), 20, (255,0,0), -1)
 
     def cross(self,img_rgb, point, color, width,length):
+        "Coloca uma cruz no centro da figura"
         cv2.line(img_rgb, (int( point[0] - length/2 ), point[1] ),  (int( point[0] + length/2 ), point[1]), color ,width, length)
         cv2.line(img_rgb, (point[0], int(point[1] - length/2) ), (point[0], int( point[1] + length/2 ) ),color ,width, length) 
 
     def segmenta_linha(self,frame):
         '''
-        Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
+        Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV). Neste caso em específico segmenta a cor amarelo da pista.
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
         cor_menor = (int(44//2), 180, 180)
         cor_maior = (int(64//2), 255, 255)
         mescla = cv2.inRange(frame_hsv, cor_menor, cor_maior)
@@ -296,10 +315,11 @@ class Camera:
         segmentado_cor = cv2.morphologyEx(mescla,cv2.MORPH_CLOSE,np.ones((7, 7)))	
 
         self.h, self.w = frame.shape[:2]
-        search_top = 3*self.h//4 - 50
-        search_bot = 3*self.h//4 + 20
-        segmentado_cor[0:search_top, 0:self.w] = 0
-        segmentado_cor[search_bot:self.h, 0:self.w] = 0
+        if self.mascara_recorte:
+            search_top = 3*self.h//4 - 50
+            search_bot = 3*self.h//4 + 20
+            segmentado_cor[0:search_top, 0:self.w] = 0
+            segmentado_cor[search_bot:self.h, 0:self.w] = 0
 
         contornos, _ = cv2.findContours(segmentado_cor.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) 
 
@@ -326,7 +346,7 @@ class Camera:
 
     def segmenta_creeper(self,frame, cor): 
         '''
-        Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
+        Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV). Neste caso em específico segmenta a cor escolhida do creeper.
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
@@ -372,9 +392,9 @@ class Camera:
             media = (0, 0)
         return media, centro, maior_contorno_area,segmentado_cor
 
-    # Inicilamente implementada apenas para filtro de cor:
+    #================================Callback=================================#
     def roda_todo_frame(self, imagem):        
-        "Função assincrona de rodagem da imagem"
+        "Função assincrona de rodagem da imagem, captando os valores de interesse"
         try:
             self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
             creeper = self.cv_image.copy()
@@ -384,8 +404,8 @@ class Camera:
             self.centro_de_massa()
             cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.8, (0,255,0))
             cv2.imshow("Camera", self.cv_image)
+            #Caso deseje ver alguma mascara de segmentação, descomentar linhas abaixo
             #cv2.imshow("segmentado", segmentado)
-            #cv2.imshow("Creeper", creeper)
             #cv2.imshow("Mascara", self.vision)
             cv2.waitKey(1)
         
@@ -393,6 +413,7 @@ class Camera:
             print('ex', e)
 
     def Subscriber(self):
+        "Retorna o subscriber do node"
         return self.subscriber 
 
 
