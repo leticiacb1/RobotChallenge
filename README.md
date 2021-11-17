@@ -2,6 +2,24 @@
 
 Projeto de Robótica 2021.2
 
+*Integrantes*:
+
+- Letícia Côelho
+- Lorran Caetano  
+- Matheus Oliveira
+- Ykaro Andrade
+
+> Status do Projeto: Em desenvolvimento :warning: 
+
+> Features realizadas: Programação orientada a objetos,Controle Derivativo e Node prestando serviço (estacao.py):warning: 
+
+* Conceito I : Atingido :heavy_check_mark:
+* Conceito C : Atingido :heavy_check_mark:
+* Conceito C+ : Atingido :heavy_check_mark:
+* Conceito B : Atingido :heavy_check_mark:
+* Conceito B+ : Atingido :heavy_check_mark:
+* Conceito A : Buscando :warning:
+
 *Para ter acesso completo as funcionalidades deste repositório, caso não possua algumas das bibliotecas, realizar:*
 > pip install -r requirements.txt
 
@@ -36,26 +54,6 @@ rosrun projeto_reverie estacao.py
 rosrun projeto_reverie robo.py
 
 ```
-
-
-*Integrantes*:
-
-- Letícia Côelho
-- Lorran Caetano  
-- Matheus Oliveira
-- Ykaro Andrade
-
-> Status do Projeto: Em desenvolvimento :warning: 
-> Features realizadas: Programação orientada a objetos,Controle Derivativo e Node prestando serviço (estacao.py):warning: 
-
-* Conceito I : Atingido :heavy_check_mark:
-* Conceito C : Atingido :heavy_check_mark:
-* Conceito C+ : Atingido :heavy_check_mark:
-* Conceito B : Atingido :heavy_check_mark:
-* Conceito B+ : Atingido :heavy_check_mark:
-* Conceito A : Buscando :warning:
-
-Falta apenas garantir encontrar estação "car" em ocasiões e implantar controle derivativo, além de refatorar o código.
 
 # Objetivos 
 
