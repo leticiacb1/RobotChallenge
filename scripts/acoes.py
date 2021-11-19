@@ -85,7 +85,7 @@ class Acoes:
     def identifica_estacao(self):
         "Identifica a estação solicitada com a rede neural"
         try:
-            if self.estacao == "horse" and self.odometria.positions()[0]<-2:
+            if (self.estacao == "horse" and self.odometria.positions()[0]<-2) or (self.estacao == "cow" and self.odometria.positions()[1]<0):
                 pass
             else:
                 if self.neural.get_posicao() != 0 and self.neural.get_estacao()==self.estacao:
@@ -96,7 +96,7 @@ class Acoes:
     def centraliza_estacao(self):
         "Realiza centralização e aproximação da estação para soltar creeper"
         if self.estado == 5:
-            if self.laserScan.get_dados()>0.6:
+            if self.laserScan.get_dados()>0.9:
                 if self.neural.get_posicao() > 0 :
                     self.lin = 0.25
                     self.ang = -0.1
