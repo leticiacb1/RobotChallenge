@@ -9,19 +9,26 @@ Projeto de Robótica 2021.2
 - Matheus Oliveira
 - Ykaro Andrade
 
-> Status do Projeto: Em desenvolvimento :warning: 
+Status do Projeto: Em desenvolvimento :warning: 
 
-> Features realizadas: Programação orientada a objetos,Controle Derivativo e Node prestando serviço (estacao.py):warning: 
+> Features realizadas: 
+- Programação orientada a objetos,
+- Controle Derivativo  
+- Node prestando serviço (estacao.py)
 
+> Conceitos:
 * Conceito I : Atingido :heavy_check_mark:
 * Conceito C : Atingido :heavy_check_mark:
 * Conceito C+ : Atingido :heavy_check_mark:
 * Conceito B : Atingido :heavy_check_mark:
 * Conceito B+ : Atingido :heavy_check_mark:
-* Conceito A : Buscando :warning:
+* Conceito A : Atingido :heavy_check_mark:
 
 *Para ter acesso completo as funcionalidades deste repositório, caso não possua algumas das bibliotecas, realizar:*
-> pip install -r requirements.txt
+> pip install pyfiglet
+> pip install sklearn
+
+## :warning: Para execução correta do programa siga o tutorial abaixo: :warning:
 
 *Para poder ver a simulação basta realizar o clone do repositório em um terminal, entrar na pasta scripts e executar o simulador:*
 ```bash
@@ -41,14 +48,14 @@ roslaunch mybot_description mybot_control2.launch
 
 ```
 
-*Abra outro terminal para executar o node de prestação de serviço de identificação de estação via Rede neural, rode comando abaixo:*
+*Abra outro terminal para executar o node de prestação de serviço de identificação de estação via Rede neural, rode comando abaixo, confira se está na pasta scripts:*
 ```bash
 
 rosrun projeto_reverie estacao.py
 
 ```
 
-*Finalmente, rode o comando abaixo e escolha a situação a ser simulada dentro do programa:*
+*Finalmente, rode o comando abaixo e escolha a situação a ser simulada dentro do programa,confira se está na pasta scripts:*
 ```bash
 
 rosrun projeto_reverie robo.py
