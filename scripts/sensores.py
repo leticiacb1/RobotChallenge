@@ -507,11 +507,16 @@ class Camera:
             creeper = self.cv_image.copy()
             self.aruco_image = self.cv_image.copy()
             self.mask,regressao,self.maiorcontorno = self.segmenta_linha(self.cv_image)
-            self.centro, self.mediaCor, self.areaCor,segmentado = self.segmenta_creeper(creeper,self.cor_creeper)
+
+            try:
+                self.centro, self.mediaCor, self.areaCor,segmentado = self.segmenta_creeper(creeper,self.cor_creeper)
+            except:
+                pass
+
             self.centro_de_massa()
             cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.8, (0,255,0))
-            cv2.imshow("Camera", self.cv_image)
             cv2.putText(regressao,self.textAngulo, (50,50), cv2.QT_FONT_NORMAL, 0.8, (255,0,0))
+            cv2.imshow("Camera", self.cv_image)
             cv2.imshow("Regressao", regressao)
             #Caso deseje ver alguma mascara de segmentação, descomentar linhas abaixo
             #cv2.imshow("segmentado", segmentado)
