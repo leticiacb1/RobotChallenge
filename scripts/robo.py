@@ -6,6 +6,7 @@ import rospy
 import numpy as np
 from sensores import *
 from acoes import Acoes
+from pyfiglet import Figlet  #  sudo apt install python3-pyfiglet
 
 __authors__ = ["Leticia Côelho","Lorran Caetano","Matheus Oliveira","Ykaro de Andrade"]
 
@@ -33,7 +34,7 @@ class Robo:
             if self.actions.get_estado() == 0:
                 self.actions.completa_volta()
                 self.camera.set_texto("Completando volta")
-                print("Completnado volta e parando")
+                print(f.renderText("Completnado volta e parando"))
 
     def circuitocompleto(self):
         "Completa de acordo com ações do usuário, seguindo máquina de estações"
@@ -41,43 +42,44 @@ class Robo:
             if self.actions.get_estado() == 0:
                 self.actions.seguimento_linha()
                 self.camera.set_texto(f"Procurando Creeper {self.camera.get_corCreeper()} com ID Aruco{self.camera.get_idCreeper()}")
-                print(f"Procurando Creeper {self.camera.get_corCreeper()} com ID Aruco{self.camera.get_idCreeper()}")
+                print(f.renderText(f"Procurando Creeper {self.camera.get_corCreeper()} com ID Aruco{self.camera.get_idCreeper()}"))
             elif self.actions.get_estado() == 1:
                 self.actions.centraliza_creeper()
-                self.camera.set_texto("Achei o Creeper! Se Aproximando")
-                print("Achei o Creeper! Se Aproximando")
+                self.camera.set_texto("Achei o Creeper! Aproximando")
+                print(f.renderText("Achei o Creeper! Aproximando"))
             elif self.actions.get_estado() == 2:
                 self.actions.controla_garra()
                 self.camera.set_texto("Capturando Creeper")
-                print("Capturando Creeper")
+                print(f.renderText("Capturando Creeper"))
             elif self.actions.get_estado() == 3:
                 self.actions.volta_pista()
                 self.camera.set_texto("Voltando pra pista")
-                print("Voltando pra pista")
+                print(f.renderText("Voltando pra pista"))
             elif self.actions.get_estado() == 4:
                 self.actions.seguimento_linha()
                 self.camera.set_texto(f"Procurando estacao {self.estacao}")
-                print(f"Procurando estacao {self.estacao}")
+                print(f.renderText(f"Procurando estacao {self.estacao}"))
             elif self.actions.get_estado() == 5:
                 self.actions.centraliza_estacao()
                 self.camera.set_texto("Achei a Estacao! Aproximando!")
-                print("Achei a Estacao! Aproximando!")
+                print(f.renderText("Achei a Estacao! Aproximando!"))
             elif self.actions.get_estado() == 6:
                 self.actions.solta_garra()
                 self.camera.set_texto(f"Soltando Creeper")
-                print("Soltando Creeper")
+                print(f.renderText("Soltando Creeper"))
             elif self.actions.get_estado() == 7:
                 self.actions.volta_pista()
                 self.camera.set_texto(f"Voltando pra pista")
-                print("Voltando pra pista")
+                print(f.renderText("Voltando pra pista"))
             elif self.actions.get_estado() == 8:
                 self.actions.completa_volta()
                 self.camera.set_texto(f"Finalizando circuito")
-                print("Finalizando circuito")
+                print(f.renderText("Finalizando circuito"))
 
 if __name__=="__main__":
     cores = ["green","orange","blue"]
-    
+    f = Figlet(font='big') 
+    print(f.renderText('SEJA BEM-VINDO'))
     print('''Deseja qual objetivo para cumprir?
     
     1 - Apenas seguir pista
