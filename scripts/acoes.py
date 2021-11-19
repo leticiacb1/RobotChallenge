@@ -243,7 +243,15 @@ class Acoes:
                 elif self.estado ==4:
                     self.identifica_estacao()
                 err = self.cx - self.w/2
-                self.lin = 0.36
+
+                try:
+                    if self.camera.angulo_vertical<53:
+                        self.lin = 0.36
+                    else:
+                        self.lin = 0.2
+                except:
+                    print("Erro para setar velocidade!")
+
                 self.ang = -float(err) / 100
                 if self.odometria.distancia_centro()>2 and self.volta == 0:
                     self.camera.set_curva("direita")   

@@ -19,6 +19,8 @@ import time
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header,String,Float64
 
+from sklearn.linear_model import LinearRegression
+from sklearn import linear_model
 
 __authors__ = ["Leticia Côelho","Lorran Caetano","Matheus Oliveira","Ykaro de Andrade"]
 
@@ -168,10 +170,10 @@ class Camera:
         #=====Atributos para realizar o retorno a pista==============#
         self.mascara_recorte = True
         self.maiorcontorno = None
+        #=====Atributo Regressao Linear para controle de velocidade ==============#
+        self.angulo_vertical = None
         #=====Atributos para printar na tela==============#
         self.text = None
-
-       
 
     #================================getters=================================#
     def get_ids(self):
@@ -225,7 +227,7 @@ class Camera:
         return self.cor_creeper
     
     def get_contorno(self):
-        "Retorna o tamanho da áreade contorno da pista para fins de volta a ela"
+        "Retorna o tamanho da área de contorno da pista para fins de volta a ela"
         if not self.mascara_recorte:
             return self.maiorcontorno
         return 0
@@ -270,7 +272,96 @@ class Camera:
             self.dist_aruco = np.sqrt(self.tvec[0]**2 + self.tvec[1]**2 + self.tvec[2]**2)
         except:
             pass
+    
+    #================================Funções relativas a regressão linear =================================#
+    def encontrar_centro_dos_segmento_de_linha(self, bgr, contornos):
+        """
+           Marca centros dos contornos na imagem recebida e retornaa todos seus pontos (X,Y) desses centros em listas.
+        """
 
+        img = bgr.copy()
+        x_list = []
+        y_list = []
+
+        color = (0,0,255)
+
+        for contorno in contornos:
+            area = cv2.contourArea(contorno)
+            
+            if area>300:
+            
+                cX = int(contorno[:,:,0].mean())
+                cY = int(contorno[:,:,1].mean())
+
+                x_list.append(cX)
+                y_list.append(cY)
+
+        for x,y in zip(x_list,y_list):
+
+            self.cross(img, (x,y), color , 2, 4)
+
+        return img, x_list, y_list
+
+
+    def regressao_linear(self, bgr, x_array, y_array):
+        """
+            bgr : imagem bgr
+
+            x_list : lista de pontos contendo o Xcentro do contorno.
+            y_list : lista de pontos contendo o Ycentro do contorno.
+            
+            Retorna a imagem com a melhor regressão encontrada.
+            
+        """
+        img = bgr.copy()
+
+        # Como é uma linha próxima da vertical, é mais produtivo escrever x por y:
+        # Treinando modelo
+
+        reg = LinearRegression()
+        yr = y_array.reshape(-1,1)  # Entradas do modelo
+        xr = x_array.reshape(-1,)   # saídas do modelo
+        reg.fit(yr,xr)
+
+        try:
+            # RANSAC:
+            ransac = linear_model.RANSACRegressor(reg)
+            ransac.fit(yr, xr)
+            reg = ransac.estimator_
+            a, b = reg.coef_, reg.intercept_
+
+            #Regressão:
+            x = a*y_array + b
+
+            #Buscando valores mínimos e máximos da lista obtida para pegarmos ponto inicial e final:
+            y_min = int(min(y_array)) - 100
+            y_max = int(max(y_array)) + 100
+
+            x_min = int(a*y_min + b)
+            x_max = int(a*y_max + b)  
+
+            #Desenhando linha:  
+            cv2.line(img, (x_min, y_min), (x_max, y_max), (255,0,0), thickness=3);  
+
+            return img, reg
+        except:
+            return img, reg
+
+    def calcular_angulo_com_vertical(self, lm):
+        """
+        lm : regressão linear.
+
+        Função retorna o angulo com a vertical.
+
+        """
+
+        a = lm.coef_
+
+        rad = math.atan(a)     # Em radianos
+        teta = rad*180/math.pi # Em graus
+        
+        return teta
+        
     #================================Funções relativas a segmentação de cores do cenário=================================#
     def faixa_imagem(self):
         "Recorta a faixa a altura de visão do robô para seguir linha, além de cortes para percorre-la, isto é força uma visão para robô seguir por uma direção na curva."
@@ -314,6 +405,8 @@ class Camera:
         centro = (frame.shape[1]//2, frame.shape[0]//2)
         segmentado_cor = cv2.morphologyEx(mescla,cv2.MORPH_CLOSE,np.ones((7, 7)))	
 
+        img_regressao = frame.copy()
+
         self.h, self.w = frame.shape[:2]
         if self.mascara_recorte:
             search_top = 3*self.h//4 - 50
@@ -331,6 +424,20 @@ class Camera:
             if area > maior_contorno_area:
                 maior_contorno = cnt
                 maior_contorno_area = area
+        
+        # Buscando centro dos contornos:
+        img_regressao, x_list, y_list = self.encontrar_centro_dos_segmento_de_linha(img_regressao, contornos)
+        self.textAngulo = ''
+
+        if x_list and len(x_list)<5:
+            x_array = np.array(x_list)
+            y_array = np.array(y_list)
+            # Regressao_linear
+            img_regressao, regressao = self.regressao_linear(img_regressao, x_array , y_array)
+
+            # Encontrando algulo com a vertical e guardando em uma variável:
+            self.angulo_vertical = abs(self.calcular_angulo_com_vertical(regressao))
+            self.textAngulo = f"Angulo: {self.angulo_vertical}"
 
         # Encontramos o centro do contorno fazendo a média de todos seus pontos.
         if not maior_contorno is None :
@@ -341,7 +448,7 @@ class Camera:
         else:
             media = (0, 0)
         
-        return segmentado_cor,maior_contorno_area
+        return segmentado_cor, img_regressao, maior_contorno_area
         
 
     def segmenta_creeper(self,frame, cor): 
@@ -399,14 +506,18 @@ class Camera:
             self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
             creeper = self.cv_image.copy()
             self.aruco_image = self.cv_image.copy()
-            self.mask,self.maiorcontorno = self.segmenta_linha(self.cv_image)
+            self.mask,regressao,self.maiorcontorno = self.segmenta_linha(self.cv_image)
+
             try:
                 self.centro, self.mediaCor, self.areaCor,segmentado = self.segmenta_creeper(creeper,self.cor_creeper)
             except:
                 pass
+
             self.centro_de_massa()
             cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.8, (0,255,0))
+            cv2.putText(regressao,self.textAngulo, (50,50), cv2.QT_FONT_NORMAL, 0.8, (255,0,0))
             cv2.imshow("Camera", self.cv_image)
+            cv2.imshow("Regressao", regressao)
             #Caso deseje ver alguma mascara de segmentação, descomentar linhas abaixo
             #cv2.imshow("segmentado", segmentado)
             #cv2.imshow("Mascara", self.vision)
