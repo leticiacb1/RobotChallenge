@@ -168,7 +168,7 @@ class Acoes:
         inicio_x = (self.odometria.positions()[0]>-3.2 and self.odometria.positions()[0]<-2.9)
         inicio_y = (self.odometria.positions()[1]>-3.15 and self.odometria.positions()[1]<-2.85)
         rotacao = self.odometria.get_angulo()>200  or (0<self.odometria.get_angulo()<70)
-        if inicio_x and inicio_y and rotacao and estacao:
+        if inicio_x and inicio_y and rotacao and estacao and self.estado==4:
                 return True
         return False
 
