@@ -174,6 +174,8 @@ class Camera:
         self.angulo_vertical = None
         #=====Atributos para printar na tela==============#
         self.text = None
+        self.vel_l = None
+        self.vel_a = None
 
     #================================getters=================================#
     def get_ids(self):
@@ -233,6 +235,12 @@ class Camera:
         return 0
 
     #================================setters=================================#
+    def set_linear(self,lin):
+        "Setta a velocidade linear na tela"
+        self.vel_l = lin
+    def set_angular(self,ang):
+        "Setta a velocidade angular na tela"
+        self.vel_a = ang
     def set_mascara_recorte(self,boolean):
         "Condição que faz o recorte da mascára da amarela da pista, permite identificação ou não de pedaços para sua volta"
         self.mascara_recorte = boolean
@@ -437,7 +445,7 @@ class Camera:
 
             # Encontrando algulo com a vertical e guardando em uma variável:
             self.angulo_vertical = abs(self.calcular_angulo_com_vertical(regressao))
-            self.textAngulo = f"Angulo: {self.angulo_vertical}"
+            self.textAngulo = f"Angulo: {self.angulo_vertical:.2f} graus"
 
         # Encontramos o centro do contorno fazendo a média de todos seus pontos.
         if not maior_contorno is None :
@@ -456,7 +464,6 @@ class Camera:
         Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV). Neste caso em específico segmenta a cor escolhida do creeper.
         '''
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    
         if cor == "orange":
             cor_menor = np.array([0, 200, 200])
             cor_maior = np.array([8, 255, 255])
@@ -514,11 +521,13 @@ class Camera:
                 pass
 
             self.centro_de_massa()
-            cv2.putText(self.cv_image,self.text, (50,50), cv2.QT_FONT_NORMAL, 0.8, (0,255,0))
-            cv2.putText(regressao,self.textAngulo, (50,50), cv2.QT_FONT_NORMAL, 0.8, (255,0,0))
+            cv2.putText(self.cv_image,"Status: "+self.text, (50,50), cv2.QT_FONT_NORMAL, 0.9, (0,255,0))
+            cv2.putText(self.cv_image,self.vel_l, (50,80), cv2.QT_FONT_NORMAL, 0.8, (255,0,0))
+            cv2.putText(self.cv_image,self.vel_a, (50,110), cv2.QT_FONT_NORMAL, 0.8, (0,0,255))
+            cv2.putText(self.cv_image,self.textAngulo, (50,140), cv2.QT_FONT_NORMAL, 0.8, (0,255,255))
             cv2.imshow("Camera", self.cv_image)
-            cv2.imshow("Regressao", regressao)
             #Caso deseje ver alguma mascara de segmentação, descomentar linhas abaixo
+            #cv2.imshow("Regressao", regressao)
             #cv2.imshow("segmentado", segmentado)
             #cv2.imshow("Mascara", self.vision)
             cv2.waitKey(1)

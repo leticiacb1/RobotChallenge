@@ -96,7 +96,7 @@ class Acoes:
     def centraliza_estacao(self):
         "Realiza centralização e aproximação da estação para soltar creeper"
         if self.estado == 5:
-            if self.laserScan.get_dados()>0.8:
+            if self.laserScan.get_dados()>0.6:
                 if self.neural.get_posicao() > 0 :
                     self.lin = 0.25
                     self.ang = -0.1
@@ -110,7 +110,6 @@ class Acoes:
 
     def centraliza_creeper(self):
         "Centraliza e se movimenta em direção ao creeper"
-        print(self.laserScan.get_dados())
         if self.estado == 1:
             if self.laserScan.get_dados()>0.18:
                 self.garra.posiciona_garra()
@@ -118,10 +117,10 @@ class Acoes:
                     if self.camera.creeper_values()[1][0]> self.camera.creeper_values()[0][0]:
                         if self.laserScan.get_dados()>0.4:
                             self.lin = 0.21
-                            self.ang = 0.12
+                            self.ang = 0.1
                         else:
                             self.lin = 0.15
-                            self.ang = 0.12
+                            self.ang = 0.1
 
                         
                     elif self.camera.creeper_values()[1][0]<self.camera.creeper_values()[0][0]:
@@ -149,8 +148,8 @@ class Acoes:
         
     def sentido_correto(self):
         "Corrige sentido do robô para percorrer a pista"
-        inicio_x = self.odometria.positions()[0]>0 and self.odometria.positions()[0]<0.3
-        inicio_y = self.odometria.positions()[1]>0 and self.odometria.positions()[1]<0.3
+        inicio_x = self.odometria.positions()[0]>-0.1 and self.odometria.positions()[0]<0.45
+        inicio_y = self.odometria.positions()[1]>-0.1 and self.odometria.positions()[1]<0.45
         rotacao = self.odometria.get_angulo()>230  or (0<self.odometria.get_angulo()<70)
 
         inicio_x_ponta = self.odometria.positions()[0]>-0.2 and self.odometria.positions()[0]<0.2
@@ -168,7 +167,7 @@ class Acoes:
         estacao = self.estacao == "car"
         inicio_x = (self.odometria.positions()[0]>-3.2 and self.odometria.positions()[0]<-2.9)
         inicio_y = (self.odometria.positions()[1]>-3.15 and self.odometria.positions()[1]<-2.85)
-        rotacao = self.odometria.get_angulo()>230  or (0<self.odometria.get_angulo()<70)
+        rotacao = self.odometria.get_angulo()>200  or (0<self.odometria.get_angulo()<70)
         if inicio_x and inicio_y and rotacao and estacao:
                 return True
         return False
@@ -207,7 +206,15 @@ class Acoes:
                 return True
 
         return False
-
+    def creeper_isolado_12(self):
+        "Permite robô ter em seu campo de visão creeper azul com id 12"
+        if self.camera.cor_creeper == "blue" and self.camera.get_idCreeper() == 12:
+            inicio_x = (self.odometria.positions()[0]>-0.1 and self.odometria.positions()[0]<0.2)
+            inicio_y = (self.odometria.positions()[1]>-0.1 and self.odometria.positions()[1]<0.2)
+            rotacao = not(180<self.odometria.get_angulo()<210)
+            if inicio_x and inicio_y and rotacao:
+                return True
+        return False
     #================================Ações de Seguimento de linha=================================#
     def seguimento_linha(self):
         """Ordena o seguimento da linha, além de controle de situações de parada ou correção"""
@@ -222,7 +229,7 @@ class Acoes:
                 self.lin = 0
                 self.ang = 0.5
 
-            elif self.estado == 0 and (self.creepers_isolados_21() or self.creepers_isolados_52()):
+            elif self.estado == 0 and (self.creepers_isolados_21() or self.creepers_isolados_52() or self.creeper_isolado_12()):
                 self.lin = 0
                 self.ang = 0.5
 
@@ -245,13 +252,9 @@ class Acoes:
                 err = self.cx - self.w/2
 
                 try:
-                    if self.camera.angulo_vertical<53:
-                        self.lin = 0.36
-                    else:
-                        self.lin = 0.2
+                    self.lin = 0.22 + 0.28*math.cos(math.radians(self.camera.angulo_vertical))
                 except:
-                    print("Erro para setar velocidade!")
-
+                    self.lin = 0.3
                 self.ang = -float(err) / 100
                 if self.odometria.distancia_centro()>2 and self.volta == 0:
                     self.camera.set_curva("direita")   
@@ -274,8 +277,8 @@ class Acoes:
         try:
             
             self.cx,self.cy,self.h,self.w = self.camera.get_valores()
-            inicio_x = self.odometria.positions()[0]>0 and self.odometria.positions()[0]<0.3
-            inicio_y = self.odometria.positions()[1]>0 and self.odometria.positions()[1]<0.3
+            inicio_x = self.odometria.positions()[0]>-0.1 and self.odometria.positions()[0]<0.5
+            inicio_y = self.odometria.positions()[1]>-0.1 and self.odometria.positions()[1]<0.5
             
             if self.sentido_correto():
                 self.lin = 0
@@ -285,11 +288,13 @@ class Acoes:
             elif self.volta_final ==2 and inicio_x and inicio_y:
                 self.lin  = 0
                 self.ang = 0
-                print("Completei Volta")
-
+                #print("Completei Volta")
             else:
                 err = self.cx - self.w/2
-                self.lin = 0.51
+                try:
+                    self.lin =  0.22 + 0.28*math.cos(math.radians(self.camera.angulo_vertical))
+                except:
+                    self.lin = 0.3
                 self.ang = -float(err) / 100
                 if self.odometria.distancia_centro()>2 and self.volta_final == 0:
                     self.camera.set_curva("direita")   
@@ -298,7 +303,6 @@ class Acoes:
                     self.camera.set_curva("esquerda")
                     self.volta_final=2
                 
-
         except rospy.ROSInterruptException:
             print("Ocorreu uma exceção com o rospy")
 

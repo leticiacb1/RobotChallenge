@@ -33,16 +33,26 @@ class Robo:
         while not rospy.is_shutdown():
             if self.actions.get_estado() == 0:
                 self.actions.completa_volta()
-                self.camera.set_texto("Completando volta")
-                print(f.renderText("Completnado volta e parando"))
+                
+                self.camera.set_linear(f"Velocidade Linear: {self.actions.lin:.2f} m/s")
+                self.camera.set_angular(f"Velocidade Angular: {self.actions.ang:.2f} m/s")
+                if self.actions.volta_final == 2 and self.actions.odometria.positions()[0]>0 and self.actions.odometria.positions()[0]<0.3:
+                    self.camera.set_texto(f"Circuito terminado")
+                    print(f.renderText("Circuito Terminado"))
+                else:
+                    print(f.renderText(f"""Completando volta"""))
+                    self.camera.set_texto(f"""Completando volta""")
+
 
     def circuitocompleto(self):
         "Completa de acordo com ações do usuário, seguindo máquina de estações"
         while not rospy.is_shutdown():
+            self.camera.set_linear(f"Velocidade Linear: {self.actions.lin:.2f} m/s")
+            self.camera.set_angular(f"Velocidade Angular: {self.actions.ang:.2f} m/s")
             if self.actions.get_estado() == 0:
                 self.actions.seguimento_linha()
-                self.camera.set_texto(f"Procurando Creeper {self.camera.get_corCreeper()} com ID Aruco{self.camera.get_idCreeper()}")
-                print(f.renderText(f"Procurando Creeper {self.camera.get_corCreeper()} com ID Aruco{self.camera.get_idCreeper()}"))
+                self.camera.set_texto(f"Procurando Creeper {self.camera.get_corCreeper()} ID {self.camera.get_idCreeper()}")
+                print(f.renderText(f"Procurando Creeper {self.camera.get_corCreeper()} ID {self.camera.get_idCreeper()}"))
             elif self.actions.get_estado() == 1:
                 self.actions.centraliza_creeper()
                 self.camera.set_texto("Achei o Creeper! Aproximando")
@@ -73,8 +83,14 @@ class Robo:
                 print(f.renderText("Voltando pra pista"))
             elif self.actions.get_estado() == 8:
                 self.actions.completa_volta()
-                self.camera.set_texto(f"Finalizando circuito")
-                print(f.renderText("Finalizando circuito"))
+                if self.actions.volta_final == 2 and self.actions.odometria.positions()[0]>0 and self.actions.odometria.positions()[0]<0.5:
+                    self.camera.set_texto(f"Circuito terminado")
+                    print(f.renderText("Circuito Terminado"))
+                    rospy.signal_shutdown("Final")
+                else:
+                    self.camera.set_texto(f"Finalizando circuito")
+                    print(f.renderText("Finalizando circuito"))
+                
 
 if __name__=="__main__":
     cores = ["green","orange","blue"]
@@ -91,9 +107,29 @@ if __name__=="__main__":
         robo.dar_volta()
     elif ans == 2:
         print('''Digite aqui qual missão deseja executar \n''')
-        cor = (input("Cor do Creeper aqui: "))
-        id = int(input("Id do Creeper aqui: "))
-        estacao = (input("Estacao desejada aqui: "))
+        cor = (input("Cor do Creeper aqui ('blue','orange','green'): "))
+        if cor == "green":
+            id = int(input("Id do Creeper aqui (13,21,23,52): "))
+            if id not in [13,21,23,52]:
+                print("Id inválida, recomece o programa")
+                rospy.signal_shutdown("Id inválida, recomece o programa")
+        elif cor =="orange":
+            id = int(input("Id do Creeper aqui (11,21): "))
+            if id not in [11,21]:
+                print("Id inválida, recomece o programa")
+                rospy.signal_shutdown("Id inválida, recomece o programa")      
+        elif cor == "blue":
+            id = int(input("Id do Creeper aqui (12,22,51): "))
+            if id not in [12,22,51]:
+                print("Id inválida, recomece o programa")
+                rospy.signal_shutdown("Id inválida, recomece o programa")
+        else:
+            print("Cor inválida, recomece o programa")
+            rospy.signal_shutdown("Cor inválida, recomece o programa")
+        estacao = (input("Estacao desejada aqui (car,dog,cow,horse): "))
+        if estacao not in ["car","dog","cow","horse"]:
+            print("Estação inválida, recomece o programa")
+            rospy.signal_shutdown("Estação inválida, recomece o programa")
         robo = Robo()
         robo.set_params(cor,id,estacao)
         robo.circuitocompleto()
