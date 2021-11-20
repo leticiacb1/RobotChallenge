@@ -1,22 +1,27 @@
-# Projeto de Róbotica
+# Projeto de Robótica 2021.2 Reverie
 
-Projeto de Robótica 2021.2
 
-*Integrantes*:
+## Vídeos dos objetivos cumpridos:
+- Completando a pista e parando onde começou: https://www.youtube.com/watch?v=LngM1R-KVNE&ab_channel=LorranLopes
+- Completa goal1 = ("blue", 12, "dog"): https://www.youtube.com/watch?v=BtXm2OVxoFc&ab_channel=LorranLopes
+- Completa goal2 = ("green", 23, "car"): https://www.youtube.com/watch?v=-6uwfAVnanQ&ab_channel=LorranLopes
+- Completa goal3 = ("orange", 11, "cow"): https://www.youtube.com/watch?v=l2VzrNyJFoY&ab_channel=LorranLopes
+ 
+## Integrantes:
 
 - Letícia Côelho
 - Lorran Caetano  
 - Matheus Oliveira
 - Ykaro Andrade
 
-Status do Projeto: Em desenvolvimento :warning: 
+## Status do Projeto: Concluído:heavy_check_mark:
 
-> Features realizadas: 
+## Features realizadas: 
 - Programação orientada a objetos,
 - Controle Derivativo  
 - Node prestando serviço (estacao.py)
 
-> Conceitos:
+## Conceitos atingidos:
 * Conceito I : Atingido :heavy_check_mark:
 * Conceito C : Atingido :heavy_check_mark:
 * Conceito C+ : Atingido :heavy_check_mark:
@@ -67,14 +72,5 @@ rosrun projeto_reverie robo.py
 Cores válidas do creeper: blue, green, orange
 Estações válidas: dog, horse, cow e car
 
-
-# Objetivos que devem ser filmados 
-
-```python
-goal1 = ("blue", 12, "dog")
-
-goal2 = ("green", 23, "car")
-
-goal3 = ("orange", 11, "cow")
-```
+@2021, Insper, Terceiro Semestre, Engenharia da Computação.
 
